@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -19,37 +20,32 @@
             user-select: none;
         }
 
-        html, body {
+        html,
+        body {
             width: 100%;
             height: 100%;
-            background: #1a0a00;
+            margin: 0;
             overflow: hidden;
+            background: #1a0a00;
             touch-action: none;
         }
 
         body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: fixed;
-            inset: 0;
+            position: relative;
         }
 
-        /* Canvas always fills full viewport */
         #gameCanvas {
             display: block;
             position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
-            transform: translateZ(0);
             touch-action: none;
         }
 
         /* All preloaded asset images stay hidden */
-        img, audio {
+        img,
+        audio {
             display: none;
         }
 
@@ -67,12 +63,17 @@
             justify-content: center;
             gap: 20px;
         }
-        #rotate-overlay.visible { display: flex; }
+
+        #rotate-overlay.visible {
+            display: flex;
+        }
+
         #rotate-overlay .rot-icon {
             font-size: 64px;
             animation: rotHint 1.8s ease-in-out infinite;
             display: inline-block;
         }
+
         #rotate-overlay p {
             color: #f5c068;
             font-family: Arial, sans-serif;
@@ -81,9 +82,18 @@
             line-height: 1.5;
             padding: 0 20px;
         }
+
         @keyframes rotHint {
-            0%,100% { transform: rotate(0deg); }
-            40%,60%  { transform: rotate(-90deg); }
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            40%,
+            60% {
+                transform: rotate(-90deg);
+            }
         }
 
         /* ══════════════════════════════════════════════════════
@@ -92,14 +102,18 @@
         #mobile-pad-wrap {
             display: none;
             position: fixed;
-            left: 0; bottom: 0;
+            left: 0;
+            bottom: 0;
             width: 160px;
             height: 160px;
             z-index: 200;
             touch-action: none;
             pointer-events: auto;
         }
-        #mobile-pad-wrap.show { display: block; }
+
+        #mobile-pad-wrap.show {
+            display: block;
+        }
 
         /* override img{display:none} for these specific elements */
         #pad-bg-el {
@@ -112,6 +126,7 @@
             pointer-events: none;
             opacity: 0.85;
         }
+
         #pad-stick-el {
             position: absolute;
             width: 44%;
@@ -131,14 +146,18 @@
         #mobile-jump-wrap {
             display: none;
             position: fixed;
-            right: 0; bottom: 0;
+            right: 0;
+            bottom: 0;
             width: 120px;
             height: 120px;
             z-index: 200;
             touch-action: none;
             pointer-events: auto;
         }
-        #mobile-jump-wrap.show { display: block; }
+
+        #mobile-jump-wrap.show {
+            display: block;
+        }
 
         #jump-btn-el {
             position: absolute;
@@ -151,6 +170,7 @@
             opacity: 0.90;
             transition: transform 0.06s ease, filter 0.06s ease;
         }
+
         #mobile-jump-wrap.pressed #jump-btn-el {
             filter: brightness(1.4) saturate(1.3);
             transform: scale(0.90);
@@ -160,161 +180,162 @@
 
 <body>
 
-<!-- Rotate reminder (portrait on phone during gameplay) -->
-<div id="rotate-overlay">
-    <span class="rot-icon">📱</span>
-    <p>Please rotate your device<br><strong>to landscape</strong> to play</p>
-</div>
+    <!-- Rotate reminder (portrait on phone during gameplay) -->
+    <div id="rotate-overlay">
+        <span class="rot-icon">📱</span>
+        <p>Please rotate your device<br><strong>to landscape</strong> to play</p>
+    </div>
 
-<!-- Game canvas -->
-<canvas id="gameCanvas"></canvas>
+    <!-- Game canvas -->
+    <canvas id="gameCanvas"></canvas>
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      MOBILE CONTROLS  (real DOM so they render above the canvas)
 ══════════════════════════════════════════════════════════════ -->
-<div id="mobile-pad-wrap">
-    <img id="pad-bg-el"    src="assets/faizi assets/sprites/pad_bg.png"   alt="">
-    <img id="pad-stick-el" src="assets/faizi assets/sprites/pad_stick.png" alt="">
-</div>
+    <div id="mobile-pad-wrap">
+        <img id="pad-bg-el" src="assets/faizi assets/sprites/pad_bg.png" alt="">
+        <img id="pad-stick-el" src="assets/faizi assets/sprites/pad_stick.png" alt="">
+    </div>
 
-<div id="mobile-jump-wrap">
-    <img id="jump-btn-el"  src="assets/faizi assets/sprites/but_controller_jump.png" alt="">
-</div>
+    <div id="mobile-jump-wrap">
+        <img id="jump-btn-el" src="assets/faizi assets/sprites/but_controller_jump.png" alt="">
+    </div>
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      BACKGROUNDS
 ══════════════════════════════════════════════════════════════ -->
-<img id="img_bg_menu"        src="assets/faizi assets/sprites/bg_menu.jpg">
-<img id="bg"                 src="assets/faizi assets/sprites/bg_game_0.jpg">
-<img id="img_bg_gameover"    src="assets/faizi assets/sprites/bg_game_over.jpg">
-<img id="img_bg_infos"       src="assets/faizi assets/sprites/bg_infos.png">
-<img id="img_bg_levelselect" src="assets/faizi assets/sprites/bg_game_0_bonus.jpg">
+    <img id="img_bg_menu" src="assets/faizi assets/sprites/bg_menu.jpg">
+    <img id="bg" src="assets/faizi assets/sprites/bg_game_0.jpg">
+    <img id="img_bg_gameover" src="assets/faizi assets/sprites/bg_game_over.jpg">
+    <img id="img_bg_infos" src="assets/faizi assets/sprites/bg_infos.png">
+    <img id="img_bg_levelselect" src="assets/faizi assets/sprites/bg_game_0_bonus.jpg">
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      MENU / UI
 ══════════════════════════════════════════════════════════════ -->
-<img id="img_logo_menu"      src="assets/faizi assets/sprites/logo_menu.png">
-<img id="img_but_play"       src="assets/faizi assets/sprites/but_play.png">
-<img id="img_but_fullscreen" src="assets/faizi assets/sprites/but_fullscreen.png">
-<img id="img_but_help"       src="assets/faizi assets/sprites/but_help.png">
-<img id="img_but_audio"      src="assets/faizi assets/sprites/audio_icon.png">
-<img id="img_but_lang"       src="assets/faizi assets/sprites/but_lang.png">
-<img id="img_but_credits"    src="assets/faizi assets/sprites/but_credits.png">
-<img id="but_exit"           src="assets/faizi assets/sprites/but_no.png">
-<img id="img_200x200"        src="assets/faizi assets/sprites/200x200.jpg">
-<img id="img_progress_bar"   src="assets/faizi assets/sprites/progress_bar.png">
-<img id="img_ctl_logo"       src="assets/faizi assets/sprites/ctl_logo.png">
-<img id="msg_box"            src="assets/faizi assets/sprites/msg_box.png">
+    <img id="img_logo_menu" src="assets/faizi assets/sprites/logo_menu.png">
+    <img id="img_but_play" src="assets/faizi assets/sprites/but_play.png">
+    <img id="img_but_fullscreen" src="assets/faizi assets/sprites/but_fullscreen.png">
+    <img id="img_but_help" src="assets/faizi assets/sprites/but_help.png">
+    <img id="img_but_audio" src="assets/faizi assets/sprites/audio_icon.png">
+    <img id="img_but_lang" src="assets/faizi assets/sprites/but_lang.png">
+    <img id="img_but_credits" src="assets/faizi assets/sprites/but_credits.png">
+    <img id="but_exit" src="assets/faizi assets/sprites/but_no.png">
+    <img id="img_200x200" src="assets/faizi assets/sprites/200x200.jpg">
+    <img id="img_progress_bar" src="assets/faizi assets/sprites/progress_bar.png">
+    <img id="img_ctl_logo" src="assets/faizi assets/sprites/ctl_logo.png">
+    <img id="msg_box" src="assets/faizi assets/sprites/msg_box.png">
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      HUD
 ══════════════════════════════════════════════════════════════ -->
-<img id="score_bg"           src="assets/faizi assets/sprites/score_bg.png">
-<img id="but_settings"       src="assets/faizi assets/sprites/but_settings.png">
-<img id="but_help"           src="assets/faizi assets/sprites/but_help.png">
-<img id="but_yes"            src="assets/faizi assets/sprites/but_yes.png">
-<img id="but_right"          src="assets/faizi assets/sprites/but_right.png">
-<img id="help_keyboard"      src="assets/faizi assets/sprites/help_keyboard.png">
-<img id="help_spacebar"      src="assets/faizi assets/sprites/help_spacebar.png">
+    <img id="score_bg" src="assets/faizi assets/sprites/score_bg.png">
+    <img id="but_settings" src="assets/faizi assets/sprites/but_settings.png">
+    <img id="but_help" src="assets/faizi assets/sprites/but_help.png">
+    <img id="but_yes" src="assets/faizi assets/sprites/but_yes.png">
+    <img id="but_right" src="assets/faizi assets/sprites/but_right.png">
+    <img id="help_keyboard" src="assets/faizi assets/sprites/help_keyboard.png">
+    <img id="help_spacebar" src="assets/faizi assets/sprites/help_spacebar.png">
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      LEVEL SELECT
 ══════════════════════════════════════════════════════════════ -->
-<img id="img_level_panel"    src="assets/faizi assets/sprites/level_panel.png">
-<img id="img_but_level"      src="assets/faizi assets/sprites/but_level.png">
+    <img id="img_level_panel" src="assets/faizi assets/sprites/level_panel.png">
+    <img id="img_but_level" src="assets/faizi assets/sprites/but_level.png">
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      PLAYER FRAMES
 ══════════════════════════════════════════════════════════════ -->
-<img id="frame1"   src="assets/faizi assets/sprites/player/player_0.png">
-<img id="frame2"   src="assets/faizi assets/sprites/player/player_1.png">
-<img id="frame3"   src="assets/faizi assets/sprites/player/player_2.png">
-<img id="frame4"   src="assets/faizi assets/sprites/player/player_3.png">
-<img id="frame5"   src="assets/faizi assets/sprites/player/player_4.png">
-<img id="frame6"   src="assets/faizi assets/sprites/player/player_5.png">
-<img id="frame7"   src="assets/faizi assets/sprites/player/player_6.png">
-<img id="frame8"   src="assets/faizi assets/sprites/player/player_7.png">
-<img id="frame9"   src="assets/faizi assets/sprites/player/player_8.png">
-<img id="frame10"  src="assets/faizi assets/sprites/player/player_9.png">
-<img id="frame11"  src="assets/faizi assets/sprites/player/player_10.png">
-<img id="frame12"  src="assets/faizi assets/sprites/player/player_11.png">
-<img id="frame13"  src="assets/faizi assets/sprites/player/player_12.png">
-<img id="frame14"  src="assets/faizi assets/sprites/player/player_13.png">
-<img id="frame15"  src="assets/faizi assets/sprites/player/player_14.png">
-<img id="frame16"  src="assets/faizi assets/sprites/player/player_15.png">
+    <img id="frame1" src="assets/faizi assets/sprites/player/player_0.png">
+    <img id="frame2" src="assets/faizi assets/sprites/player/player_1.png">
+    <img id="frame3" src="assets/faizi assets/sprites/player/player_2.png">
+    <img id="frame4" src="assets/faizi assets/sprites/player/player_3.png">
+    <img id="frame5" src="assets/faizi assets/sprites/player/player_4.png">
+    <img id="frame6" src="assets/faizi assets/sprites/player/player_5.png">
+    <img id="frame7" src="assets/faizi assets/sprites/player/player_6.png">
+    <img id="frame8" src="assets/faizi assets/sprites/player/player_7.png">
+    <img id="frame9" src="assets/faizi assets/sprites/player/player_8.png">
+    <img id="frame10" src="assets/faizi assets/sprites/player/player_9.png">
+    <img id="frame11" src="assets/faizi assets/sprites/player/player_10.png">
+    <img id="frame12" src="assets/faizi assets/sprites/player/player_11.png">
+    <img id="frame13" src="assets/faizi assets/sprites/player/player_12.png">
+    <img id="frame14" src="assets/faizi assets/sprites/player/player_13.png">
+    <img id="frame15" src="assets/faizi assets/sprites/player/player_14.png">
+    <img id="frame16" src="assets/faizi assets/sprites/player/player_15.png">
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      PLAYER — die & climb spritesheet
 ══════════════════════════════════════════════════════════════ -->
-<img id="die_climb" src="assets/die_climb.png">
+    <img id="die_climb" src="assets/die_climb.png">
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      MENU SCENE SPRITES
 ══════════════════════════════════════════════════════════════ -->
-<img id="menuSceneSprites"   src="assets/allsprites.png">
+    <img id="menuSceneSprites" src="assets/allsprites.png">
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      ENEMIES
 ══════════════════════════════════════════════════════════════ -->
-<img id="enemyRunning"       src="assets/enemyR.png">
-<img id="enemyDied"          src="assets/enemyDied.png">
-<img id="enemy2"             src="assets/enemy2.png">
+    <img id="enemyRunning" src="assets/enemyR.png">
+    <img id="enemyDied" src="assets/enemyDied.png">
+    <img id="enemy2" src="assets/enemy2.png">
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      BLOCKS
 ══════════════════════════════════════════════════════════════ -->
-<img id="bocks"              src="assets/blocks.png">
-<img id="img_blocks"         src="assets/blocks.png">
+    <img id="bocks" src="assets/blocks.png">
+    <img id="img_blocks" src="assets/blocks.png">
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      ITEMS / OBJECTS
 ══════════════════════════════════════════════════════════════ -->
-<img id="img_coin"           src="assets/faizi assets/sprites/collectibles/coin.png">
-<img id="img_silver_key"     src="assets/faizi assets/sprites/collectibles/silver_key/silver_key_0.png">
-<img id="img_knifes"         src="assets/faizi assets/sprites/enemies/spikes/spike_top/spike_top_47.png">
-<img id="img_lock"           src="assets/lock.png">
-<img id="img_doors"          src="assets/doors.png">
-<img id="img_ladder"         src="assets/faizi assets/sprites/specials/ladder.png">
+    <img id="img_coin" src="assets/faizi assets/sprites/collectibles/coin.png">
+    <img id="img_silver_key" src="assets/faizi assets/sprites/collectibles/silver_key/silver_key_0.png">
+    <img id="img_knifes" src="assets/faizi assets/sprites/enemies/spikes/spike_top/spike_top_47.png">
+    <img id="img_lock" src="assets/lock.png">
+    <img id="img_doors" src="assets/doors.png">
+    <img id="img_ladder" src="assets/faizi assets/sprites/specials/ladder.png">
 
-<!-- hidden preload copies for legacy id lookups -->
-<img id="pad_bg"             src="assets/faizi assets/sprites/pad_bg.png">
-<img id="pad_stick"          src="assets/faizi assets/sprites/pad_stick.png">
-<img id="jump_controller"    src="assets/faizi assets/sprites/but_controller_jump.png">
+    <!-- hidden preload copies for legacy id lookups -->
+    <img id="pad_bg" src="assets/faizi assets/sprites/pad_bg.png">
+    <img id="pad_stick" src="assets/faizi assets/sprites/pad_stick.png">
+    <img id="jump_controller" src="assets/faizi assets/sprites/but_controller_jump.png">
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      AUDIO
 ══════════════════════════════════════════════════════════════ -->
-<audio id="snd_soundtrack"      src="assets/faizi assets/sounds/soundtrack.mp3"      loop preload="auto"></audio>
-<audio id="snd_click"           src="assets/faizi assets/sounds/click.mp3"           preload="auto"></audio>
-<audio id="snd_jump"            src="assets/faizi assets/sounds/jump.mp3"            preload="auto"></audio>
-<audio id="snd_bounce"          src="assets/faizi assets/sounds/bounce.mp3"          preload="auto"></audio>
-<audio id="snd_walking"         src="assets/faizi assets/sounds/walking.mp3"         preload="auto"></audio>
-<audio id="snd_die"             src="assets/faizi assets/sounds/player_death.mp3"    preload="auto"></audio>
-<audio id="snd_player_death"    src="assets/faizi assets/sounds/player_death.mp3"    preload="auto"></audio>
-<audio id="snd_coin"            src="assets/faizi assets/sounds/coin.mp3"            preload="auto"></audio>
-<audio id="snd_key"             src="assets/faizi assets/sounds/key.mp3"             preload="auto"></audio>
-<audio id="snd_enemy_0_death"   src="assets/faizi assets/sounds/enemy_0_death.mp3"   preload="auto"></audio>
-<audio id="snd_enemy_1_death"   src="assets/faizi assets/sounds/enemy_1_death.mp3"   preload="auto"></audio>
-<audio id="snd_enemy_2_death"   src="assets/faizi assets/sounds/enemy_2_death.mp3"   preload="auto"></audio>
-<audio id="snd_puff"            src="assets/faizi assets/sounds/puff.mp3"            preload="auto"></audio>
-<audio id="snd_puff_enemy_2"    src="assets/faizi assets/sounds/puff_enemy_2.mp3"    preload="auto"></audio>
-<audio id="snd_door_open"       src="assets/faizi assets/sounds/door_open.mp3"       preload="auto"></audio>
-<audio id="snd_lock_break"      src="assets/faizi assets/sounds/lock_break.mp3"      preload="auto"></audio>
-<audio id="snd_lock_tremble"    src="assets/faizi assets/sounds/lock_tremble.mp3"    preload="auto"></audio>
-<audio id="snd_cage_open"       src="assets/faizi assets/sounds/cage_open.mp3"       preload="auto"></audio>
-<audio id="snd_game_over_lose"  src="assets/faizi assets/sounds/game_over_lose.mp3"  preload="auto"></audio>
-<audio id="snd_game_over_win"   src="assets/faizi assets/sounds/game_over_win.mp3"   preload="auto"></audio>
-<audio id="snd_friend_glory"    src="assets/faizi assets/sounds/friend_glory.mp3"    preload="auto"></audio>
-<audio id="snd_jetpack"         src="assets/faizi assets/sounds/jetpack.mp3"         preload="auto"></audio>
+    <audio id="snd_soundtrack" src="assets/faizi assets/sounds/soundtrack.mp3" loop preload="auto"></audio>
+    <audio id="snd_click" src="assets/faizi assets/sounds/click.mp3" preload="auto"></audio>
+    <audio id="snd_jump" src="assets/faizi assets/sounds/jump.mp3" preload="auto"></audio>
+    <audio id="snd_bounce" src="assets/faizi assets/sounds/bounce.mp3" preload="auto"></audio>
+    <audio id="snd_walking" src="assets/faizi assets/sounds/soundtrack.mp3" preload="auto"></audio>
+    <audio id="snd_die" src="assets/faizi assets/sounds/player_death.mp3" preload="auto"></audio>
+    <audio id="snd_player_death" src="assets/faizi assets/sounds/player_death.mp3" preload="auto"></audio>
+    <audio id="snd_coin" src="assets/faizi assets/sounds/coin.mp3" preload="auto"></audio>
+    <audio id="snd_key" src="assets/faizi assets/sounds/key.mp3" preload="auto"></audio>
+    <audio id="snd_enemy_0_death" src="assets/faizi assets/sounds/enemy_0_death.mp3" preload="auto"></audio>
+    <audio id="snd_enemy_1_death" src="assets/faizi assets/sounds/enemy_1_death.mp3" preload="auto"></audio>
+    <audio id="snd_enemy_2_death" src="assets/faizi assets/sounds/enemy_2_death.mp3" preload="auto"></audio>
+    <audio id="snd_puff" src="assets/faizi assets/sounds/puff.mp3" preload="auto"></audio>
+    <audio id="snd_puff_enemy_2" src="assets/faizi assets/sounds/puff_enemy_2.mp3" preload="auto"></audio>
+    <audio id="snd_door_open" src="assets/faizi assets/sounds/door_open.mp3" preload="auto"></audio>
+    <audio id="snd_lock_break" src="assets/faizi assets/sounds/lock_break.mp3" preload="auto"></audio>
+    <audio id="snd_lock_tremble" src="assets/faizi assets/sounds/lock_tremble.mp3" preload="auto"></audio>
+    <audio id="snd_cage_open" src="assets/faizi assets/sounds/cage_open.mp3" preload="auto"></audio>
+    <audio id="snd_game_over_lose" src="assets/faizi assets/sounds/game_over_lose.mp3" preload="auto"></audio>
+    <audio id="snd_game_over_win" src="assets/faizi assets/sounds/game_over_win.mp3" preload="auto"></audio>
+    <audio id="snd_friend_glory" src="assets/faizi assets/sounds/friend_glory.mp3" preload="auto"></audio>
+    <audio id="snd_jetpack" src="assets/faizi assets/sounds/jetpack.mp3" preload="auto"></audio>
 
-<script src="./mobile/mobileControls.js"></script>
-<script type="module" src="./game/main.js"></script>
+    <script src="./mobile/mobileControls.js"></script>
+    <script type="module" src="./game/main.js"></script>
 
-<!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
      MOBILE CONTROLS  — vanilla JS, no dependencies
      Injects synthetic keyboard events so player.js needs ZERO changes.
 ══════════════════════════════════════════════════════════════ -->
 
 
 </body>
+
 </html>

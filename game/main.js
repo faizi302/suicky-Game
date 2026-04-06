@@ -10,8 +10,7 @@ const MAX_VIRT_W = 1920;
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d', {
-    alpha: false,
-    desynchronized: true
+    alpha: false
 });
 
 let sceneManager = null;
@@ -20,12 +19,14 @@ function updateVirtualSize() {
     const screenW = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1280);
     const screenH = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 720);
 
-    // Keep virtual height fixed, adapt width to current screen ratio
     VIRT_W = Math.floor(screenW * (VIRT_H / screenH));
-
-    // Clamp so it does not become too narrow or too wide
     VIRT_W = Math.max(MIN_VIRT_W, Math.min(VIRT_W, MAX_VIRT_W));
 }
+
+let lastCssW = 0;
+let lastCssH = 0;
+let lastBufferW = 0;
+let lastBufferH = 0;
 
 function fitCanvas() {
     updateVirtualSize();
@@ -34,49 +35,58 @@ function fitCanvas() {
     const windowW = Math.max(1, window.innerWidth || document.documentElement.clientWidth || VIRT_W);
     const windowH = Math.max(1, window.innerHeight || document.documentElement.clientHeight || VIRT_H);
 
-    // Keep whole game visible
     const scale = Math.min(windowW / VIRT_W, windowH / VIRT_H);
-
     const displayW = Math.max(1, Math.floor(VIRT_W * scale));
     const displayH = Math.max(1, Math.floor(VIRT_H * scale));
 
-    canvas.width = Math.round(VIRT_W * dpr);
-    canvas.height = Math.round(VIRT_H * dpr);
+    const bufferW = Math.round(VIRT_W * dpr);
+    const bufferH = Math.round(VIRT_H * dpr);
+
+    if (bufferW !== lastBufferW) canvas.width = bufferW;
+    if (bufferH !== lastBufferH) canvas.height = bufferH;
+
+    if (displayW !== lastCssW) canvas.style.width = `${displayW}px`;
+    if (displayH !== lastCssH) canvas.style.height = `${displayH}px`;
 
     canvas.style.position = 'absolute';
-    canvas.style.width = `${displayW}px`;
-    canvas.style.height = `${displayH}px`;
     canvas.style.left = `${Math.floor((windowW - displayW) / 2)}px`;
     canvas.style.top = `${Math.floor((windowH - displayH) / 2)}px`;
     canvas.style.margin = '0';
     canvas.style.padding = '0';
     canvas.style.imageRendering = 'pixelated';
-    canvas.style.imageRendering = 'crisp-edges';
     canvas.style.touchAction = 'none';
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
 
-    if (sceneManager) {
-        sceneManager.resize(VIRT_W, VIRT_H);
-    }
+    lastCssW = displayW;
+    lastCssH = displayH;
+    lastBufferW = bufferW;
+    lastBufferH = bufferH;
+
+    if (sceneManager) sceneManager.resize(VIRT_W, VIRT_H);
 }
 
-function handleResize() {
-    fitCanvas();
+let resizeQueued = false;
+
+function queueResize() {
+    if (resizeQueued) return;
+    resizeQueued = true;
+
+    requestAnimationFrame(() => {
+        resizeQueued = false;
+        fitCanvas();
+    });
 }
 
 fitCanvas();
 
-window.addEventListener('resize', handleResize);
-window.addEventListener('orientationchange', () => {
-    setTimeout(handleResize, 120);
-});
-document.addEventListener('fullscreenchange', () => {
-    setTimeout(handleResize, 80);
-});
+window.addEventListener('resize', queueResize);
+window.addEventListener('orientationchange', () => setTimeout(queueResize, 200));
+document.addEventListener('fullscreenchange', () => setTimeout(queueResize, 100));
+
 if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', handleResize);
+    window.visualViewport.addEventListener('resize', queueResize);
 }
 
 initSoundSystem();

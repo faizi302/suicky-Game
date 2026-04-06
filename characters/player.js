@@ -76,7 +76,6 @@ export default class Player {
         this.deadTimer = 0;
         this.deadDone = false;
 
-        this._walkTimer = 0;
         this._moveIntent = false;
     }
 
@@ -205,14 +204,8 @@ export default class Player {
             playSound('snd_jump', 0.65, 80, true);
         }
 
-        const wasOnGround = this.onGround;
-
         applyGravity(this);
         resolveMapCollision(this, map, this.tileSize);
-
-        if (!wasOnGround && this.onGround) {
-            playSound('snd_bounce', 0.55, 80, true);
-        }
 
         if (this.x < this.tileSize) {
             this.x = this.tileSize;
@@ -221,16 +214,6 @@ export default class Player {
 
         if (this.y > map.length * this.tileSize + 120) {
             this.die();
-        }
-
-        if (this.onGround && this._moveIntent && Math.abs(this.vx) > 0.16) {
-            this._walkTimer -= dt;
-            if (this._walkTimer <= 0) {
-                playSound('snd_walking', 0.22, 0, false);
-                this._walkTimer = 360;
-            }
-        } else {
-            this._walkTimer = 0;
         }
 
         if (!this.onGround) {
