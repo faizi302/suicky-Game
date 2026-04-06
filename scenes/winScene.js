@@ -19,6 +19,7 @@ export default class WinScene {
         this.ctx = sceneManager.ctx;
         this.W = sceneManager.width;
         this.H = sceneManager.height;
+
         this.data = data || {
             mode: 'win',
             score: 0,
@@ -30,41 +31,65 @@ export default class WinScene {
             levelId: 1
         };
 
+        this.hovered = null;
+        this.anim = 0;
+        this._lastTouchAt = 0;
+
+        this.imgHome = document.getElementById('but_home');
+        this.imgRestart = document.getElementById('but_restart');
+        this.imgNext = document.getElementById('but_next') || document.getElementById('but_right');
+        this.msgBox = document.getElementById('msg_box');
+
         this.buttons = this._buildButtons();
 
         this._onMouseMove = this._onMouseMove.bind(this);
         this._onClick = this._onClick.bind(this);
-        this._onTouch = this._onTouch.bind(this);
-
-        this.hovered = null;
+        this._onTouchStart = this._onTouchStart.bind(this);
+        this._onTouchEnd = this._onTouchEnd.bind(this);
 
         this.canvas.addEventListener('mousemove', this._onMouseMove);
         this.canvas.addEventListener('click', this._onClick);
-        this.canvas.addEventListener('touchend', this._onTouch, { passive: false });
+        this.canvas.addEventListener('touchstart', this._onTouchStart, { passive: false });
+        this.canvas.addEventListener('touchend', this._onTouchEnd, { passive: false });
+    }
+
+    resize(width, height) {
+        this.W = width;
+        this.H = height;
+        this.buttons = this._buildButtons();
     }
 
     destroy() {
         this.canvas.removeEventListener('mousemove', this._onMouseMove);
         this.canvas.removeEventListener('click', this._onClick);
-        this.canvas.removeEventListener('touchend', this._onTouch);
+        this.canvas.removeEventListener('touchstart', this._onTouchStart);
+        this.canvas.removeEventListener('touchend', this._onTouchEnd);
     }
 
     _buildButtons() {
         const mode = this.data?.mode || 'win';
-        const size = 92;
-        const gap = 28;
+        const size = Math.round(Math.min(this.W, this.H) * 0.12);
+        const clamped = Math.max(64, Math.min(96, size));
+        const gap = Math.round(clamped * 0.28);
         const count = mode === 'win' ? 3 : 2;
-        const total = size * count + gap * (count - 1);
+        const total = clamped * count + gap * (count - 1);
         const x = (this.W - total) / 2;
-        const y = this.H * 0.63;
+        const y = this.H * 0.64;
 
         const base = [
-            { id: 'home', x, y, w: size, h: size },
-            { id: 'restart', x: x + size + gap, y, w: size, h: size }
+            { id: 'home', x, y, w: clamped, h: clamped, img: this.imgHome },
+            { id: 'restart', x: x + clamped + gap, y, w: clamped, h: clamped, img: this.imgRestart }
         ];
 
         if (mode === 'win') {
-            base.push({ id: 'next', x: x + (size + gap) * 2, y, w: size, h: size });
+            base.push({
+                id: 'next',
+                x: x + (clamped + gap) * 2,
+                y,
+                w: clamped,
+                h: clamped,
+                img: this.imgNext
+            });
         }
 
         return base;
@@ -93,13 +118,23 @@ export default class WinScene {
         this.hovered = this._hit(this._getPos(e))?.id || null;
     }
 
-    _onTouch(e) {
+    _onTouchStart(e) {
         e.preventDefault();
-        this._onClick(e);
+    }
+
+    _onTouchEnd(e) {
+        this._lastTouchAt = performance.now();
+        e.preventDefault();
+        this._handlePress(this._getPos(e));
     }
 
     _onClick(e) {
-        const hit = this._hit(this._getPos(e));
+        if (performance.now() - this._lastTouchAt < 450) return;
+        this._handlePress(this._getPos(e));
+    }
+
+    _handlePress(pos) {
+        const hit = this._hit(pos);
         if (!hit) return;
 
         if (hit.id === 'home') {
@@ -117,7 +152,9 @@ export default class WinScene {
         }
     }
 
-    update() {}
+    update(dt = 16) {
+        this.anim = Math.min(1, this.anim + dt / 220);
+    }
 
     draw() {
         const ctx = this.ctx;
@@ -138,17 +175,23 @@ export default class WinScene {
             ctx.fillRect(0, 0, this.W, this.H);
         }
 
+        ctx.save();
+        ctx.globalAlpha = this.anim;
         ctx.fillStyle = 'rgba(0,0,0,0.62)';
         ctx.fillRect(0, 0, this.W, this.H);
 
-        const panelW = Math.min(this.W * 0.42, 520);
-        const panelH = Math.min(this.H * 0.5, 370);
+        const panelW = Math.min(this.W * 0.46, 600);
+        const panelH = Math.min(this.H * 0.52, 390);
         const panelX = (this.W - panelW) / 2;
         const panelY = (this.H - panelH) / 2 - 18;
 
-        const msg = document.getElementById('msg_box');
-        if (msg?.complete) {
-            ctx.drawImage(msg, panelX, panelY, panelW, panelH);
+        ctx.translate(this.W / 2, this.H / 2);
+        const scale = 0.88 + this.anim * 0.12;
+        ctx.scale(scale, scale);
+        ctx.translate(-this.W / 2, -this.H / 2);
+
+        if (this.msgBox?.complete) {
+            ctx.drawImage(this.msgBox, panelX, panelY, panelW, panelH);
         } else {
             ctx.fillStyle = '#2c1200';
             drawRoundedRect(ctx, panelX, panelY, panelW, panelH, 24);
@@ -157,78 +200,51 @@ export default class WinScene {
 
         ctx.textAlign = 'center';
         ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${Math.round(panelH * 0.12)}px Arial`;
+        ctx.font = `bold ${Math.round(panelH * 0.12)}px Arial Black, Arial`;
         ctx.fillText(mode === 'win' ? 'CONGRATULATIONS!' : 'GAME OVER', this.W / 2, panelY + panelH * 0.18);
 
-        ctx.font = `bold ${Math.round(panelH * 0.09)}px Arial`;
-        ctx.fillText(`SCORE: ${this.data.score || 0}`, this.W / 2, panelY + panelH * 0.48);
-        ctx.fillText(`TOTAL SCORE: ${this.data.totalScore || 0}`, this.W / 2, panelY + panelH * 0.63);
+        ctx.font = `bold ${Math.round(panelH * 0.10)}px Arial Black, Arial`;
+        ctx.fillText(`SCORE: ${this.data.score || 0}`, this.W / 2, panelY + panelH * 0.46);
+        ctx.fillText(`TOTAL SCORE: ${this.data.totalScore || 0}`, this.W / 2, panelY + panelH * 0.64);
 
         for (const b of this.buttons) {
             const hov = this.hovered === b.id;
             this._drawButton(ctx, b, hov);
         }
 
-        ctx.textAlign = 'left';
+        ctx.restore();
     }
 
     _drawButton(ctx, b, hovered) {
         ctx.save();
-        if (hovered) {
-            ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
-            ctx.scale(1.08, 1.08);
-            ctx.translate(-(b.x + b.w / 2), -(b.y + b.h / 2));
-        }
 
-        const g = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
-        g.addColorStop(0, '#f7d7a3');
-        g.addColorStop(1, '#e3b15e');
-        ctx.fillStyle = g;
-        ctx.strokeStyle = '#7d4f0e';
-        ctx.lineWidth = 5;
-        drawRoundedRect(ctx, b.x, b.y, b.w, b.h, 18);
-        ctx.fill();
-        ctx.stroke();
+        const scale = hovered ? 1.06 : 1;
+        ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+        ctx.scale(scale, scale);
+        ctx.translate(-(b.x + b.w / 2), -(b.y + b.h / 2));
 
-        ctx.strokeStyle = '#8c5b10';
-        ctx.fillStyle = '#8c5b10';
-        ctx.lineWidth = 6;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        if (b.id === 'next') {
-            ctx.beginPath();
-            ctx.moveTo(b.x + b.w * 0.34, b.y + b.h * 0.3);
-            ctx.lineTo(b.x + b.w * 0.34, b.y + b.h * 0.7);
-            ctx.lineTo(b.x + b.w * 0.58, b.y + b.h * 0.5);
-            ctx.closePath();
+        if (b.img?.complete && b.img.naturalWidth > 0) {
+            ctx.drawImage(b.img, b.x, b.y, b.w, b.h);
+        } else {
+            const g = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
+            g.addColorStop(0, '#f7d7a3');
+            g.addColorStop(1, '#e3b15e');
+            ctx.fillStyle = g;
+            ctx.strokeStyle = '#7d4f0e';
+            ctx.lineWidth = 5;
+            drawRoundedRect(ctx, b.x, b.y, b.w, b.h, 18);
             ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(b.x + b.w * 0.53, b.y + b.h * 0.3);
-            ctx.lineTo(b.x + b.w * 0.53, b.y + b.h * 0.7);
-            ctx.lineTo(b.x + b.w * 0.77, b.y + b.h * 0.5);
-            ctx.closePath();
-            ctx.fill();
-        } else if (b.id === 'restart') {
-            ctx.beginPath();
-            ctx.arc(b.x + b.w * 0.5, b.y + b.h * 0.52, b.w * 0.2, 0.8, 5.1, true);
             ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(b.x + b.w * 0.38, b.y + b.h * 0.26);
-            ctx.lineTo(b.x + b.w * 0.34, b.y + b.h * 0.45);
-            ctx.lineTo(b.x + b.w * 0.52, b.y + b.h * 0.4);
-            ctx.stroke();
-        } else if (b.id === 'home') {
-            ctx.beginPath();
-            ctx.moveTo(b.x + b.w * 0.28, b.y + b.h * 0.52);
-            ctx.lineTo(b.x + b.w * 0.5, b.y + b.h * 0.3);
-            ctx.lineTo(b.x + b.w * 0.72, b.y + b.h * 0.52);
-            ctx.lineTo(b.x + b.w * 0.65, b.y + b.h * 0.52);
-            ctx.lineTo(b.x + b.w * 0.65, b.y + b.h * 0.72);
-            ctx.lineTo(b.x + b.w * 0.35, b.y + b.h * 0.72);
-            ctx.lineTo(b.x + b.w * 0.35, b.y + b.h * 0.52);
-            ctx.closePath();
-            ctx.stroke();
+
+            ctx.fillStyle = '#8c5b10';
+            ctx.font = `bold ${Math.round(b.h * 0.42)}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(
+                b.id === 'home' ? '⌂' : b.id === 'restart' ? '↺' : '▶',
+                b.x + b.w / 2,
+                b.y + b.h / 2
+            );
         }
 
         ctx.restore();

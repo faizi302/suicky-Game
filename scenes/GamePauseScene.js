@@ -10,25 +10,36 @@ export default class GamePauseScene {
 
         this.buttons = this._buildButtons();
         this.hoveredBtn = null;
+        this._lastTouchAt = 0;
 
         this._onMouseMove = this._onMouseMove.bind(this);
         this._onClick = this._onClick.bind(this);
+        this._onTouchStart = this._onTouchStart.bind(this);
+        this._onTouchEnd = this._onTouchEnd.bind(this);
         this._onKeyDown = this._onKeyDown.bind(this);
+
         this.canvas.addEventListener('mousemove', this._onMouseMove);
         this.canvas.addEventListener('click', this._onClick);
+        this.canvas.addEventListener('touchstart', this._onTouchStart, { passive: false });
+        this.canvas.addEventListener('touchend', this._onTouchEnd, { passive: false });
         window.addEventListener('keydown', this._onKeyDown);
 
         setMusicVolume(0.12);
     }
 
+    resize(width, height) {
+        this.W = width;
+        this.H = height;
+        this.buttons = this._buildButtons();
+    }
+
     _buildButtons() {
-        const W = this.W;
-        const H = this.H;
-        const bw = 230;
-        const bh = 56;
-        const gap = 16;
-        const startY = H / 2 - 10;
-        const cx = W / 2 - bw / 2;
+        const bw = Math.min(260, Math.max(200, this.W * 0.22));
+        const bh = Math.min(62, Math.max(50, this.H * 0.08));
+        const gap = Math.round(bh * 0.28);
+        const startY = this.H / 2 - bh * 0.55;
+        const cx = this.W / 2 - bw / 2;
+
         return [
             { id: 'resume', label: '▶  RESUME', color: '#4cae4c', x: cx, y: startY, w: bw, h: bh },
             { id: 'restart', label: '↺  RESTART', color: '#e6a817', x: cx, y: startY + bh + gap, w: bw, h: bh },
@@ -39,15 +50,18 @@ export default class GamePauseScene {
     destroy() {
         this.canvas.removeEventListener('mousemove', this._onMouseMove);
         this.canvas.removeEventListener('click', this._onClick);
+        this.canvas.removeEventListener('touchstart', this._onTouchStart);
+        this.canvas.removeEventListener('touchend', this._onTouchEnd);
         window.removeEventListener('keydown', this._onKeyDown);
         setMusicVolume(0.35);
     }
 
     _getPos(e) {
         const r = this.canvas.getBoundingClientRect();
+        const src = (e.changedTouches && e.changedTouches[0]) || e;
         return {
-            x: (e.clientX - r.left) * (this.W / r.width),
-            y: (e.clientY - r.top) * (this.H / r.height)
+            x: (src.clientX - r.left) * (this.W / r.width),
+            y: (src.clientY - r.top) * (this.H / r.height)
         };
     }
 
@@ -69,10 +83,24 @@ export default class GamePauseScene {
         }
     }
 
+    _onTouchStart(e) {
+        e.preventDefault();
+    }
+
+    _onTouchEnd(e) {
+        this._lastTouchAt = performance.now();
+        e.preventDefault();
+        this._handlePress(this._getPos(e));
+    }
+
     _onClick(e) {
-        const { x, y } = this._getPos(e);
+        if (performance.now() - this._lastTouchAt < 450) return;
+        this._handlePress(this._getPos(e));
+    }
+
+    _handlePress(pos) {
         for (const b of this.buttons) {
-            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+            if (pos.x >= b.x && pos.x <= b.x + b.w && pos.y >= b.y && pos.y <= b.y + b.h) {
                 this._handleBtn(b.id);
                 return;
             }
@@ -107,10 +135,10 @@ export default class GamePauseScene {
         ctx.fillStyle = 'rgba(0,0,0,0.62)';
         ctx.fillRect(0, 0, W, H);
 
-        const pw = 340;
-        const ph = 360;
+        const pw = Math.min(380, W * 0.72);
+        const ph = Math.min(380, H * 0.62);
         const px = W / 2 - pw / 2;
-        const py = H / 2 - ph / 2 - 28;
+        const py = H / 2 - ph / 2 - 10;
 
         ctx.save();
         ctx.shadowColor = 'rgba(200,135,42,0.5)';
@@ -129,12 +157,12 @@ export default class GamePauseScene {
         ctx.shadowColor = '#ffe040';
         ctx.shadowBlur = 18;
         ctx.fillStyle = '#ffe040';
-        ctx.font = 'bold 50px "Arial Black", Arial';
-        ctx.fillText('⏸  PAUSED', W / 2, py + 68);
+        ctx.font = `bold ${Math.round(Math.min(50, pw * 0.14))}px "Arial Black", Arial`;
+        ctx.fillText('⏸  PAUSED', W / 2, py + ph * 0.20);
         ctx.shadowBlur = 0;
         ctx.fillStyle = 'rgba(200,200,200,0.8)';
-        ctx.font = '16px Arial';
-        ctx.fillText('Press  ESC  or  P  to resume', W / 2, py + 108);
+        ctx.font = `${Math.round(Math.min(16, pw * 0.05))}px Arial`;
+        ctx.fillText('Press ESC or P to resume', W / 2, py + ph * 0.30);
         ctx.restore();
 
         for (const b of this.buttons) {
@@ -158,13 +186,9 @@ export default class GamePauseScene {
         ctx.stroke();
 
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 22px Arial';
+        ctx.font = `bold ${Math.round(Math.min(22, b.h * 0.42))}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        if (hov) {
-            ctx.shadowColor = 'rgba(255,255,255,0.4)';
-            ctx.shadowBlur = 8;
-        }
         ctx.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2);
         ctx.restore();
     }

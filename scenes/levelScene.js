@@ -1,4 +1,4 @@
-import { getLevelProgress, getTotalLatestScore, getUnlockedLevelsCount, TOTAL_LEVELS } from '../system/progress.js';
+import { getLevelProgress, getTotalLatestScore, getUnlockedLevelsCount } from '../system/progress.js';
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
@@ -26,26 +26,31 @@ export default class LevelScene {
         this.panelScale = Math.min(this.W / 1366, this.H / 768);
         this.topButtons = this._buildTopButtons();
         this.levelButtons = this._buildLevelButtons();
+        this._lastTouchAt = 0;
 
         this._onMouseMove = this._onMouseMove.bind(this);
         this._onClick = this._onClick.bind(this);
+        this._onTouchStart = this._onTouchStart.bind(this);
         this._onTouchEnd = this._onTouchEnd.bind(this);
 
         this.canvas.addEventListener('mousemove', this._onMouseMove);
         this.canvas.addEventListener('click', this._onClick);
+        this.canvas.addEventListener('touchstart', this._onTouchStart, { passive: false });
         this.canvas.addEventListener('touchend', this._onTouchEnd, { passive: false });
     }
+
     resize(width, height) {
-    this.W = width;
-    this.H = height;
-    this.panelScale = Math.min(this.W / 1280, this.H / 768);
-    this.topButtons = this._buildTopButtons();
-    this.levelButtons = this._buildLevelButtons();
-}
+        this.W = width;
+        this.H = height;
+        this.panelScale = Math.min(this.W / 1280, this.H / 768);
+        this.topButtons = this._buildTopButtons();
+        this.levelButtons = this._buildLevelButtons();
+    }
 
     destroy() {
         this.canvas.removeEventListener('mousemove', this._onMouseMove);
         this.canvas.removeEventListener('click', this._onClick);
+        this.canvas.removeEventListener('touchstart', this._onTouchStart);
         this.canvas.removeEventListener('touchend', this._onTouchEnd);
     }
 
@@ -111,10 +116,10 @@ export default class LevelScene {
     }
 
     _hit(items, pos) {
-        return items.find(item => (
+        return items.find(item =>
             pos.x >= item.x && pos.x <= item.x + item.w &&
             pos.y >= item.y && pos.y <= item.y + item.h
-        )) || null;
+        ) || null;
     }
 
     _onMouseMove(e) {
@@ -124,13 +129,22 @@ export default class LevelScene {
         this.hoveredId = topHit?.id || levelHit?.id || null;
     }
 
-    _onTouchEnd(e) {
+    _onTouchStart(e) {
         e.preventDefault();
-        this._onClick(e);
+    }
+
+    _onTouchEnd(e) {
+        this._lastTouchAt = performance.now();
+        e.preventDefault();
+        this._handlePress(this._getPos(e));
     }
 
     _onClick(e) {
-        const pos = this._getPos(e);
+        if (performance.now() - this._lastTouchAt < 450) return;
+        this._handlePress(this._getPos(e));
+    }
+
+    _handlePress(pos) {
         const topHit = this._hit(this.topButtons, pos);
         if (topHit) {
             this._handleTopButton(topHit.id);
@@ -164,11 +178,9 @@ export default class LevelScene {
     draw() {
         const ctx = this.ctx;
         ctx.save();
-
         this._drawBackground(ctx);
         this._drawTopButtons(ctx);
         this._drawPanel(ctx);
-
         ctx.restore();
     }
 
@@ -330,7 +342,6 @@ export default class LevelScene {
                 ctx.stroke();
             }
         } else if (kind === 'fullscreen') {
-            const s = 0.18;
             ctx.beginPath();
             ctx.moveTo(x + w * 0.42, y + h * 0.42);
             ctx.lineTo(x + w * 0.24, y + h * 0.24);
