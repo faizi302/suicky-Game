@@ -1,22 +1,22 @@
 (function () {
     'use strict';
 
-    const padWrap  = document.getElementById('mobile-pad-wrap');
+    const padWrap = document.getElementById('mobile-pad-wrap');
     const jumpWrap = document.getElementById('mobile-jump-wrap');
-    const stickEl  = document.getElementById('pad-stick-el');
-    const overlay  = document.getElementById('rotate-overlay');
+    const stickEl = document.getElementById('pad-stick-el');
+    const overlay = document.getElementById('rotate-overlay');
 
     if (!padWrap || !jumpWrap || !stickEl || !overlay) return;
 
-    const heldKeys = {};
+    const heldKeys = Object.create(null);
     let stickTouchId = null;
-    let jumpTouchIds = new Set();
+    const jumpTouchIds = new Set();
     let ctrVisible = false;
+    let updateQueued = false;
 
     const BP = {
         phoneMax: 767,
-        tabletMax: 1024,
-        laptopMin: 1025
+        tabletMax: 1024
     };
 
     function getDeviceClass() {
@@ -40,20 +40,32 @@
         return getDeviceClass() === 'phone';
     }
 
-    function pressKey(k) {
-        if (heldKeys[k]) return;
-        heldKeys[k] = true;
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    function pressKey(key) {
+        if (heldKeys[key]) return;
+        heldKeys[key] = true;
+        window.dispatchEvent(new KeyboardEvent('keydown', {
+            key,
+            bubbles: true,
+            cancelable: true
+        }));
     }
 
-    function releaseKey(k) {
-        if (!heldKeys[k]) return;
-        heldKeys[k] = false;
-        window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true, cancelable: true }));
+    function releaseKey(key) {
+        if (!heldKeys[key]) return;
+        heldKeys[key] = false;
+        window.dispatchEvent(new KeyboardEvent('keyup', {
+            key,
+            bubbles: true,
+            cancelable: true
+        }));
     }
 
     function releaseAll() {
-        ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].forEach(releaseKey);
+        releaseKey('ArrowLeft');
+        releaseKey('ArrowRight');
+        releaseKey('ArrowUp');
+        releaseKey('ArrowDown');
+        releaseKey(' ');
     }
 
     function resetStick() {
@@ -67,12 +79,16 @@
 
     function setControlsVisible(on) {
         if (ctrVisible === on) return;
+
         ctrVisible = on;
         padWrap.classList.toggle('show', on);
         jumpWrap.classList.toggle('show', on);
+
         if (!on) {
             releaseAll();
             resetStick();
+            jumpTouchIds.clear();
+            jumpWrap.classList.remove('pressed');
         }
     }
 
@@ -82,8 +98,8 @@
         const short = Math.min(vw, vh);
         const kind = getDeviceClass();
 
-        let padSize;
-        let jumpSize;
+        let padSize = 0;
+        let jumpSize = 0;
 
         if (kind === 'phone') {
             padSize = Math.min(180, Math.max(96, short * 0.30));
@@ -91,9 +107,6 @@
         } else if (kind === 'tablet') {
             padSize = Math.min(220, Math.max(120, short * 0.24));
             jumpSize = Math.min(170, Math.max(90, short * 0.18));
-        } else {
-            padSize = 0;
-            jumpSize = 0;
         }
 
         if (padSize <= 0 || jumpSize <= 0) {
@@ -124,9 +137,16 @@
             overlay.classList.remove('visible');
             return;
         }
+
         const landscape = window.innerWidth > window.innerHeight;
         overlay.classList.toggle('visible', !landscape);
-        if (!landscape) releaseAll();
+
+        if (!landscape) {
+            releaseAll();
+            resetStick();
+            jumpTouchIds.clear();
+            jumpWrap.classList.remove('pressed');
+        }
     }
 
     function rectOf(el) {
@@ -135,8 +155,12 @@
 
     function inZone(touch, el, pad = 24) {
         const r = rectOf(el);
-        return touch.clientX >= r.left - pad && touch.clientX <= r.right + pad &&
-               touch.clientY >= r.top - pad && touch.clientY <= r.bottom + pad;
+        return (
+            touch.clientX >= r.left - pad &&
+            touch.clientX <= r.right + pad &&
+            touch.clientY >= r.top - pad &&
+            touch.clientY <= r.bottom + pad
+        );
     }
 
     function moveStick(cx, cy) {
@@ -147,10 +171,10 @@
         let dx = cx - ocx;
         let dy = cy - ocy;
 
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dist = Math.hypot(dx, dy);
         const maxR = r.width * 0.26;
 
-        if (dist > maxR) {
+        if (dist > maxR && dist > 0) {
             dx = (dx / dist) * maxR;
             dy = (dy / dist) * maxR;
         }
@@ -180,6 +204,22 @@
             releaseKey('ArrowUp');
             releaseKey('ArrowDown');
         }
+    }
+
+    function updateMobileControlsNow() {
+        setControlsVisible(shouldShowControls());
+        layoutControls();
+        checkOrientation();
+    }
+
+    function updateMobileControls() {
+        if (updateQueued) return;
+        updateQueued = true;
+
+        requestAnimationFrame(() => {
+            updateQueued = false;
+            updateMobileControlsNow();
+        });
     }
 
     document.addEventListener('touchstart', (e) => {
@@ -212,6 +252,7 @@
             if (t.identifier === stickTouchId) {
                 resetStick();
             }
+
             if (jumpTouchIds.has(t.identifier)) {
                 jumpTouchIds.delete(t.identifier);
                 if (jumpTouchIds.size === 0) {
@@ -229,24 +270,24 @@
         jumpWrap.classList.remove('pressed');
     }, { passive: true });
 
-    setInterval(() => {
-        setControlsVisible(shouldShowControls());
-        layoutControls();
-        checkOrientation();
-    }, 250);
-
-    window.addEventListener('resize', () => {
-        layoutControls();
-        checkOrientation();
-    });
+    window.addEventListener('resize', updateMobileControls);
 
     window.addEventListener('orientationchange', () => {
-        setTimeout(() => {
-            layoutControls();
-            checkOrientation();
-        }, 200);
+        setTimeout(updateMobileControls, 200);
     });
 
-    layoutControls();
-    checkOrientation();
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            releaseAll();
+            resetStick();
+            jumpTouchIds.clear();
+            jumpWrap.classList.remove('pressed');
+        } else {
+            updateMobileControls();
+        }
+    });
+
+    window.updateMobileControls = updateMobileControls;
+
+    updateMobileControlsNow();
 })();

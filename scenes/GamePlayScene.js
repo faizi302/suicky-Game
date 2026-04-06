@@ -34,6 +34,7 @@ export default class GamePlayScene {
         this._saveProgress(true);
 
         window.__mobileGameActive = true;
+        if (window.updateMobileControls) window.updateMobileControls();
     }
 
     resize(width, height) {
@@ -50,6 +51,7 @@ export default class GamePlayScene {
         window.removeEventListener('keydown', this._onKeyDown);
         if (this.game && this.game.ui) this.game.ui.destroy();
         window.__mobileGameActive = false;
+        if (window.updateMobileControls) window.updateMobileControls();
     }
 
     internalReset() {
@@ -70,6 +72,7 @@ export default class GamePlayScene {
         this._saveProgress(true);
 
         window.__mobileGameActive = true;
+        if (window.updateMobileControls) window.updateMobileControls();
     }
 
     _handleKeyDown(e) {
@@ -163,6 +166,7 @@ export default class GamePlayScene {
             this._saveProgress(true);
             this.game.winSceneOpened = true;
             window.__mobileGameActive = false;
+            if (window.updateMobileControls) window.updateMobileControls();
 
             this.sceneManager.showWin({
                 levelId: this.levelId,
@@ -178,6 +182,7 @@ export default class GamePlayScene {
         if (this.game.ui?.gameOver) {
             this._saveProgress(true);
             window.__mobileGameActive = false;
+            if (window.updateMobileControls) window.updateMobileControls();
         }
     }
 

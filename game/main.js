@@ -97,6 +97,8 @@ sceneManager.resize(VIRT_W, VIRT_H);
 let lastTime = 0;
 let accumulator = 0;
 const FIXED_STEP = 1000 / 60;
+const MAX_FRAME_DT = 100;
+const MAX_STEPS = 6;
 
 function loop(timestamp) {
     if (!lastTime) lastTime = timestamp;
@@ -104,12 +106,20 @@ function loop(timestamp) {
     let frameDt = timestamp - lastTime;
     lastTime = timestamp;
 
-    frameDt = Math.max(0, Math.min(frameDt, 40));
+    if (frameDt < 0) frameDt = 0;
+    if (frameDt > MAX_FRAME_DT) frameDt = MAX_FRAME_DT;
+
     accumulator += frameDt;
 
-    while (accumulator >= FIXED_STEP) {
+    let steps = 0;
+    while (accumulator >= FIXED_STEP && steps < MAX_STEPS) {
         sceneManager.update(FIXED_STEP);
         accumulator -= FIXED_STEP;
+        steps++;
+    }
+
+    if (steps === MAX_STEPS && accumulator > FIXED_STEP) {
+        accumulator = 0;
     }
 
     ctx.clearRect(0, 0, VIRT_W, VIRT_H);
@@ -119,3 +129,4 @@ function loop(timestamp) {
 }
 
 requestAnimationFrame(loop);
+
