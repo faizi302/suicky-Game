@@ -34,6 +34,15 @@
             position: relative;
         }
 
+        /* FULLSCREEN ROOT */
+        #game-root {
+            position: fixed;
+            inset: 0;
+            overflow: visible !important;
+            background: #1a0a00;
+        }
+
+        /* CANVAS */
         #gameCanvas {
             display: block;
             position: absolute;
@@ -41,17 +50,17 @@
             image-rendering: pixelated;
             image-rendering: crisp-edges;
             touch-action: none;
+            z-index: 1;
         }
 
-        /* All preloaded asset images stay hidden */
-        img,
+        /* All preloaded asset images stay hidden —
+           EXCEPT the three mobile control images (pad bg, stick, jump button) */
+        img:not(#pad-bg-el):not(#pad-stick-el):not(#jump-btn-el),
         audio {
             display: none;
         }
 
-        /* ══════════════════════════════════════════════════════
-           PORTRAIT ROTATE OVERLAY (phone only, during gameplay)
-        ══════════════════════════════════════════════════════ */
+        /* ROTATE OVERLAY */
         #rotate-overlay {
             display: none;
             position: fixed;
@@ -96,35 +105,51 @@
             }
         }
 
-        /* ══════════════════════════════════════════════════════
-           JOYSTICK PAD  (bottom-left, visible only during gameplay)
-        ══════════════════════════════════════════════════════ */
-        #mobile-pad-wrap {
+        #mobile-pad-wrap,
+        #mobile-jump-wrap {
             display: none;
-            position: fixed;
+            position: fixed !important;
+            touch-action: none;
+            pointer-events: auto;
+            visibility: visible;
+            opacity: 1;
+            z-index: 2147483647 !important;
+        }
+
+        #mobile-pad-wrap {
             left: 0;
             bottom: 0;
             width: 160px;
             height: 160px;
-            z-index: 200;
-            touch-action: none;
-            pointer-events: auto;
         }
 
-        #mobile-pad-wrap.show {
-            display: block;
+        #mobile-jump-wrap {
+            right: 0;
+            bottom: 0;
+            width: 120px;
+            height: 120px;
         }
 
-        /* override img{display:none} for these specific elements */
+        #mobile-pad-wrap.show,
+        #mobile-jump-wrap.show {
+            display: block !important;
+        }
+
+        #pad-bg-el,
+        #pad-stick-el,
+        #jump-btn-el {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
         #pad-bg-el {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
             object-fit: contain;
-            display: block !important;
             pointer-events: none;
-            opacity: 0.85;
         }
 
         #pad-stick-el {
@@ -135,28 +160,8 @@
             left: 50%;
             transform: translate(-50%, -50%);
             object-fit: contain;
-            display: block !important;
             pointer-events: none;
             transition: transform 0.04s linear;
-        }
-
-        /* ══════════════════════════════════════════════════════
-           JUMP BUTTON  (bottom-right)
-        ══════════════════════════════════════════════════════ */
-        #mobile-jump-wrap {
-            display: none;
-            position: fixed;
-            right: 0;
-            bottom: 0;
-            width: 120px;
-            height: 120px;
-            z-index: 200;
-            touch-action: none;
-            pointer-events: auto;
-        }
-
-        #mobile-jump-wrap.show {
-            display: block;
         }
 
         #jump-btn-el {
@@ -165,9 +170,7 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-            display: block !important;
             pointer-events: none;
-            opacity: 0.90;
             transition: transform 0.06s ease, filter 0.06s ease;
         }
 
@@ -175,31 +178,55 @@
             filter: brightness(1.4) saturate(1.3);
             transform: scale(0.90);
         }
+
+        /* Strong fullscreen enforcement — wrappers AND their images */
+        #game-root:fullscreen #mobile-pad-wrap,
+        #game-root:fullscreen #mobile-jump-wrap,
+        #game-root:-webkit-full-screen #mobile-pad-wrap,
+        #game-root:-webkit-full-screen #mobile-jump-wrap {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 2147483647 !important;
+        }
+
+        /* Explicitly force control images visible in fullscreen —
+           mobile browser UA stylesheets can reset img display inside fullscreen context */
+        #game-root:fullscreen #pad-bg-el,
+        #game-root:fullscreen #pad-stick-el,
+        #game-root:fullscreen #jump-btn-el,
+        #game-root:-webkit-full-screen #pad-bg-el,
+        #game-root:-webkit-full-screen #pad-stick-el,
+        #game-root:-webkit-full-screen #jump-btn-el {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
     </style>
 </head>
 
 <body>
 
     <!-- Rotate reminder (portrait on phone during gameplay) -->
-    <div id="rotate-overlay">
-        <span class="rot-icon">📱</span>
-        <p>Please rotate your device<br><strong>to landscape</strong> to play</p>
+    <div id="game-root">
+        <div id="rotate-overlay">
+            <span class="rot-icon">📱</span>
+            <p>Please rotate your device<br><strong>to landscape</strong> to play</p>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="mobile-pad-wrap">
+            <img id="pad-bg-el" src="assets/faizi assets/sprites/pad_bg.png" alt="">
+            <img id="pad-stick-el" src="assets/faizi assets/sprites/pad_stick.png" alt="">
+        </div>
+
+        <div id="mobile-jump-wrap">
+            <img id="jump-btn-el" src="assets/faizi assets/sprites/but_controller_jump.png" alt="">
+        </div>
     </div>
 
-    <!-- Game canvas -->
-    <canvas id="gameCanvas"></canvas>
 
-    <!-- ══════════════════════════════════════════════════════════════
-     MOBILE CONTROLS  (real DOM so they render above the canvas)
-══════════════════════════════════════════════════════════════ -->
-    <div id="mobile-pad-wrap">
-        <img id="pad-bg-el" src="assets/faizi assets/sprites/pad_bg.png" alt="">
-        <img id="pad-stick-el" src="assets/faizi assets/sprites/pad_stick.png" alt="">
-    </div>
-
-    <div id="mobile-jump-wrap">
-        <img id="jump-btn-el" src="assets/faizi assets/sprites/but_controller_jump.png" alt="">
-    </div>
 
     <!-- ══════════════════════════════════════════════════════════════
      BACKGROUNDS
@@ -296,10 +323,7 @@
     <img id="img_doors" src="assets/doors.png">
     <img id="img_ladder" src="assets/faizi assets/sprites/specials/ladder.png">
 
-    <!-- hidden preload copies for legacy id lookups -->
-    <img id="pad_bg" src="assets/faizi assets/sprites/pad_bg.png">
-    <img id="pad_stick" src="assets/faizi assets/sprites/pad_stick.png">
-    <img id="jump_controller" src="assets/faizi assets/sprites/but_controller_jump.png">
+
 
 
 

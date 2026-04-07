@@ -171,14 +171,27 @@ this.camera = createCamera(this.width, this.height, {
         });
     }
 
-    toggleFullscreen() {
-        const c = this.canvas;
-        if (!document.fullscreenElement) {
-            (c.requestFullscreen || c.webkitRequestFullscreen || c.msRequestFullscreen)?.call(c);
-        } else {
-            (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen)?.call(document);
-        }
+toggleFullscreen() {
+    const root = document.getElementById('game-root') || this.canvas;
+
+    if (!document.fullscreenElement) {
+        (
+            root.requestFullscreen ||
+            root.webkitRequestFullscreen ||
+            root.msRequestFullscreen
+        )?.call(root);
+    } else {
+        (
+            document.exitFullscreen ||
+            document.webkitExitFullscreen ||
+            document.msExitFullscreen
+        )?.call(document);
     }
+
+    setTimeout(() => {
+        if (window.updateMobileControls) window.updateMobileControls();
+    }, 120);
+}
 
     onPlayerDeath() {
         if (this.dead || this.missionComplete) return;

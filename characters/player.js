@@ -155,7 +155,7 @@ export default class Player {
         const right = keys['ArrowRight'] || keys['d'] || keys['D'];
         const wantsUp = keys['ArrowUp'] || keys['w'] || keys['W'];
         const wantsDown = keys['ArrowDown'] || keys['s'] || keys['S'];
-        const wantsJump = keys[' '] || wantsUp;
+        const wantsJump = keys[' '] ;
 
         this._moveIntent = !!(left || right);
 

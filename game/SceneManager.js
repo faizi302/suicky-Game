@@ -162,17 +162,27 @@ export default class SceneManager {
         this.currentScene = null;
     }
 
-    toggleFullscreen() {
-        const c = this.canvas;
+toggleFullscreen() {
+    const root = document.getElementById('game-root') || this.canvas;
 
-        if (!document.fullscreenElement) {
-            const fn = c.requestFullscreen || c.webkitRequestFullscreen || c.msRequestFullscreen;
-            if (fn) fn.call(c);
-        } else {
-            const fn = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
-            if (fn) fn.call(document);
-        }
+    if (!document.fullscreenElement) {
+        const fn =
+            root.requestFullscreen ||
+            root.webkitRequestFullscreen ||
+            root.msRequestFullscreen;
+        if (fn) fn.call(root);
+    } else {
+        const fn =
+            document.exitFullscreen ||
+            document.webkitExitFullscreen ||
+            document.msExitFullscreen;
+        if (fn) fn.call(document);
     }
+
+    setTimeout(() => {
+        if (window.updateMobileControls) window.updateMobileControls();
+    }, 120);
+}
 
     update(dt) {
         if (this.currentSceneName === 'pause') {
