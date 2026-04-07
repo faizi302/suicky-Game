@@ -46,7 +46,7 @@ export default class Player {
         this.speed = 0.48;
         this.maxSpeed = 3.3;
         this.friction = 0.84;
-        this.jumpForce = -16.4;
+        this.jumpForce = -15;
         this.climbSpeed = 2.2;
 
         this.alive = true;
