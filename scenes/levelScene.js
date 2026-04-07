@@ -37,6 +37,9 @@ export default class LevelScene {
         this.canvas.addEventListener('click', this._onClick);
         this.canvas.addEventListener('touchstart', this._onTouchStart, { passive: false });
         this.canvas.addEventListener('touchend', this._onTouchEnd, { passive: false });
+
+        window.__mobileGameActive = false;
+        if (window.updateMobileControls) window.updateMobileControls();
     }
 
     resize(width, height) {
@@ -57,9 +60,11 @@ export default class LevelScene {
     _buildTopButtons() {
         const size = Math.round(Math.min(this.W, this.H) * 0.09);
         const pad = Math.round(size * 0.28);
+        const gap = Math.round(size * 0.16);
+
         return [
             { id: 'fullscreen', x: pad, y: pad, w: size, h: size },
-            { id: 'audio', x: this.W - pad - size * 2 - 16, y: pad, w: size, h: size },
+            { id: 'audio', x: this.W - pad - size * 2 - gap, y: pad, w: size, h: size },
             { id: 'close', x: this.W - pad - size, y: pad, w: size, h: size }
         ];
     }
@@ -79,27 +84,48 @@ export default class LevelScene {
         const panel = this._panelRect();
         const cols = 4;
         const rows = 3;
-        const btnW = Math.round(panel.w * 0.155);
-        const btnH = Math.round(btnW * (130 / 120));
-        const gapX = Math.round(panel.w * 0.055);
-        const gapY = Math.round(panel.h * 0.06);
-        const startX = Math.round(panel.x + (panel.w - (cols * btnW + (cols - 1) * gapX)) / 2);
-        const startY = Math.round(panel.y + panel.h * 0.12);
+
+        const innerPadX = Math.round(panel.w * 0.08);
+        const topPad = Math.round(panel.h * 0.11);
+        const footerSpace = Math.round(panel.h * 0.20); // reserved area for total score
+        const gapX = Math.round(panel.w * 0.045);
+        const gapY = Math.round(panel.h * 0.045);
+
+        const availableW = panel.w - innerPadX * 2;
+        const availableH = panel.h - topPad - footerSpace;
+
+        const btnAspect = 120 / 130; // source button ratio
+        const btnWByWidth = (availableW - gapX * (cols - 1)) / cols;
+        const btnHByWidth = btnWByWidth / btnAspect;
+
+        const btnHByHeight = (availableH - gapY * (rows - 1)) / rows;
+        const btnWByHeight = btnHByHeight * btnAspect;
+
+        const btnW = Math.round(Math.min(btnWByWidth, btnWByHeight));
+        const btnH = Math.round(btnW / btnAspect);
+
+        const gridW = cols * btnW + (cols - 1) * gapX;
+        const gridH = rows * btnH + (rows - 1) * gapY;
+
+        const startX = Math.round(panel.x + (panel.w - gridW) / 2);
+        const startY = Math.round(panel.y + topPad + Math.max(0, (availableH - gridH) * 0.18));
 
         const buttons = [];
         let levelId = 1;
+
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 buttons.push({
                     id: levelId,
-                    x: startX + c * (btnW + gapX),
-                    y: startY + r * (btnH + gapY),
+                    x: Math.round(startX + c * (btnW + gapX)),
+                    y: Math.round(startY + r * (btnH + gapY)),
                     w: btnW,
                     h: btnH
                 });
                 levelId++;
             }
         }
+
         return buttons;
     }
 
@@ -207,7 +233,7 @@ export default class LevelScene {
     _drawTopButtons(ctx) {
         for (const btn of this.topButtons) {
             const hovered = this.hoveredId === btn.id;
-            this._drawWoodButton(ctx, btn.x, btn.y, btn.w, btn.h, hovered ? 1.06 : 1, btn.id);
+            this._drawTopButtonImage(ctx, btn, hovered ? 1.06 : 1);
         }
     }
 
@@ -227,10 +253,22 @@ export default class LevelScene {
             this._drawLevelButton(ctx, btn);
         }
 
+        const lastBtn = this.levelButtons[this.levelButtons.length - 1];
+        const footerTop = lastBtn ? (lastBtn.y + lastBtn.h) : (panel.y + panel.h * 0.75);
+        const footerBottom = panel.y + panel.h - Math.round(panel.h * 0.05);
+        const scoreY = Math.round(footerTop + (footerBottom - footerTop) * 0.62);
+
+        ctx.save();
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${Math.round(panel.h * 0.082)}px Arial`;
-        ctx.fillText(`TOTAL SCORE: ${getTotalLatestScore()}`, panel.x + panel.w / 2, panel.y + panel.h - 50);
+        ctx.strokeStyle = 'rgba(70, 35, 0, 0.9)';
+        ctx.lineWidth = Math.max(2, Math.round(panel.h * 0.008));
+        ctx.font = `bold ${Math.round(Math.min(panel.h * 0.062, 26))}px Arial`;
+        const txt = `TOTAL SCORE: ${getTotalLatestScore()}`;
+        ctx.strokeText(txt, panel.x + panel.w / 2, scoreY);
+        ctx.fillText(txt, panel.x + panel.w / 2, scoreY);
+        ctx.restore();
     }
 
     _drawLevelButton(ctx, btn) {
@@ -243,9 +281,10 @@ export default class LevelScene {
         const score = Number(progress?.latestScore || progress?.score || 0);
 
         ctx.save();
+
         if (hovered) {
             ctx.translate(btn.x + btn.w / 2, btn.y + btn.h / 2);
-            ctx.scale(1.04, 1.04);
+            ctx.scale(1.035, 1.035);
             ctx.translate(-(btn.x + btn.w / 2), -(btn.y + btn.h / 2));
         }
 
@@ -259,105 +298,91 @@ export default class LevelScene {
         }
 
         const numberY = btn.y + btn.h * 0.34;
-        const scoreY = btn.y + btn.h * 0.76;
+        const scoreY = btn.y + btn.h * 0.77;
 
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillStyle = unlocked ? '#8e5a05' : '#ffffff';
-        ctx.font = `bold ${Math.round(btn.h * 0.36)}px Arial`;
+        ctx.font = `bold ${Math.round(btn.h * 0.34)}px Arial`;
         ctx.fillText(String(btn.id), btn.x + btn.w / 2, numberY);
 
         if (unlocked) {
-            ctx.font = `bold ${Math.round(btn.h * 0.21)}px Arial`;
+            ctx.font = `bold ${Math.round(btn.h * 0.18)}px Arial`;
             ctx.fillText(String(score), btn.x + btn.w / 2, scoreY);
         } else {
-            ctx.font = `bold ${Math.round(btn.h * 0.28)}px Arial`;
-            ctx.fillStyle = '#ffd94f';
-            ctx.fillText('🔒', btn.x + btn.w / 2, btn.y + btn.h * 0.78);
+            const lockImg = document.getElementById('img_lock');
+            const lockW = btn.w * 0.22;
+            const lockH = btn.h * 0.28;
+
+            if (lockImg?.complete) {
+                ctx.drawImage(
+                    lockImg,
+                    btn.x + (btn.w - lockW) / 2,
+                    btn.y + btn.h * 0.60,
+                    lockW,
+                    lockH
+                );
+            } else {
+                ctx.font = `bold ${Math.round(btn.h * 0.26)}px Arial`;
+                ctx.fillStyle = '#ffd94f';
+                ctx.fillText('🔒', btn.x + btn.w / 2, btn.y + btn.h * 0.76);
+            }
         }
 
         ctx.restore();
     }
 
-    _drawWoodButton(ctx, x, y, w, h, scale, kind) {
+    _drawTopButtonImage(ctx, btn, scale = 1) {
+        const img = this._getTopButtonImage(btn.id);
+        if (!img) return;
+
+        const hovered = this.hoveredId === btn.id;
+        const drawScale = hovered ? scale : 1;
+
         ctx.save();
-        if (scale !== 1) {
-            ctx.translate(x + w / 2, y + h / 2);
-            ctx.scale(scale, scale);
-            ctx.translate(-(x + w / 2), -(y + h / 2));
+
+        if (drawScale !== 1) {
+            ctx.translate(btn.x + btn.w / 2, btn.y + btn.h / 2);
+            ctx.scale(drawScale, drawScale);
+            ctx.translate(-(btn.x + btn.w / 2), -(btn.y + btn.h / 2));
         }
 
-        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowColor = 'rgba(0,0,0,0.35)';
         ctx.shadowBlur = 10;
         ctx.shadowOffsetY = 4;
 
-        const g = ctx.createLinearGradient(x, y, x, y + h);
-        g.addColorStop(0, '#f3d6a8');
-        g.addColorStop(1, '#e4b059');
-        ctx.fillStyle = g;
-        ctx.strokeStyle = '#7f4f06';
-        ctx.lineWidth = Math.max(3, Math.round(w * 0.06));
-        drawRoundedRect(ctx, x, y, w, h, Math.round(w * 0.18));
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetY = 0;
-        ctx.strokeStyle = '#8c5b10';
-        ctx.fillStyle = '#8c5b10';
-        ctx.lineWidth = Math.max(4, Math.round(w * 0.07));
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        if (kind === 'close') {
-            ctx.beginPath();
-            ctx.moveTo(x + w * 0.3, y + h * 0.3);
-            ctx.lineTo(x + w * 0.7, y + h * 0.7);
-            ctx.moveTo(x + w * 0.7, y + h * 0.3);
-            ctx.lineTo(x + w * 0.3, y + h * 0.7);
-            ctx.stroke();
-        } else if (kind === 'audio') {
+        if (btn.id === 'audio') {
             const muted = this.sceneManager.isAudioMuted();
-            ctx.beginPath();
-            ctx.moveTo(x + w * 0.28, y + h * 0.58);
-            ctx.lineTo(x + w * 0.42, y + h * 0.58);
-            ctx.lineTo(x + w * 0.54, y + h * 0.72);
-            ctx.lineTo(x + w * 0.54, y + h * 0.28);
-            ctx.lineTo(x + w * 0.42, y + h * 0.42);
-            ctx.lineTo(x + w * 0.28, y + h * 0.42);
-            ctx.closePath();
-            ctx.stroke();
-            if (!muted) {
-                ctx.beginPath();
-                ctx.arc(x + w * 0.56, y + h * 0.5, w * 0.16, -0.8, 0.8);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(x + w * 0.58, y + h * 0.5, w * 0.24, -0.8, 0.8);
-                ctx.stroke();
-            } else {
-                ctx.beginPath();
-                ctx.moveTo(x + w * 0.25, y + h * 0.25);
-                ctx.lineTo(x + w * 0.75, y + h * 0.75);
-                ctx.strokeStyle = '#c53f2c';
-                ctx.lineWidth = Math.max(5, Math.round(w * 0.09));
-                ctx.stroke();
-            }
-        } else if (kind === 'fullscreen') {
-            ctx.beginPath();
-            ctx.moveTo(x + w * 0.42, y + h * 0.42);
-            ctx.lineTo(x + w * 0.24, y + h * 0.24);
-            ctx.lineTo(x + w * 0.38, y + h * 0.24);
-            ctx.moveTo(x + w * 0.58, y + h * 0.42);
-            ctx.lineTo(x + w * 0.76, y + h * 0.24);
-            ctx.lineTo(x + w * 0.62, y + h * 0.24);
-            ctx.moveTo(x + w * 0.42, y + h * 0.58);
-            ctx.lineTo(x + w * 0.24, y + h * 0.76);
-            ctx.lineTo(x + w * 0.38, y + h * 0.76);
-            ctx.moveTo(x + w * 0.58, y + h * 0.58);
-            ctx.lineTo(x + w * 0.76, y + h * 0.76);
-            ctx.lineTo(x + w * 0.62, y + h * 0.76);
-            ctx.stroke();
+            const frames = this._getSpriteFrameData(img, 2);
+            const sx = muted ? frames.frameW : 0;
+            ctx.drawImage(img, sx, 0, frames.frameW, frames.frameH, btn.x, btn.y, btn.w, btn.h);
+        } else if (btn.id === 'fullscreen') {
+            const isFullscreen = !!(
+                document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.msFullscreenElement
+            );
+            const frames = this._getSpriteFrameData(img, 2);
+            const sx = isFullscreen ? frames.frameW : 0;
+            ctx.drawImage(img, sx, 0, frames.frameW, frames.frameH, btn.x, btn.y, btn.w, btn.h);
+        } else {
+            ctx.drawImage(img, btn.x, btn.y, btn.w, btn.h);
         }
 
         ctx.restore();
+    }
+
+    _getSpriteFrameData(img, framesCount) {
+        return {
+            frameW: Math.floor(img.naturalWidth / framesCount),
+            frameH: img.naturalHeight
+        };
+    }
+
+    _getTopButtonImage(id) {
+        if (id === 'fullscreen') return document.getElementById('img_but_fullscreen');
+        if (id === 'audio') return document.getElementById('img_but_audio');
+        if (id === 'close') return document.getElementById('but_exit');
+        return null;
     }
 }

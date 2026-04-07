@@ -159,7 +159,7 @@ export function createLevel2Map() {
     addCoins(coins, 104, 106, 11);
     addCoins(coins, 107, 108, 9);
     addCoins(coins, 110, 112, 7);
-    addLadder(ladders, 113, 12, 7);
+    addLadder(ladders, 117, 12, 7);
 
     platform(grid, 116, 7, 12);
     addCoins(coins, 117, 127, 7);
@@ -269,7 +269,7 @@ export function createLevel2Map() {
 
     const door = {
         x: 283 * TILE,
-        y: 10 * TILE,
+        y: 12 * TILE,
         width: 52,
         height: 120,
         col: 287,

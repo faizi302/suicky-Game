@@ -108,7 +108,7 @@ export function createLevel5Map() {
     addCoins(coins, 22, 23, 7);
     addCoins(coins, 25, 27, 5);
 
-    addLadder(ladders, 29, 12, 5);
+    addLadder(ladders, 34, 12, 5);
     platform(grid, 32, 5, 12);
     addCoins(coins, 33, 43, 5);
     addKey(keys, 42, 5);
@@ -136,7 +136,7 @@ export function createLevel5Map() {
     blockStack(grid, 65, 10, 1, 4);
     platform(grid, 68, 8, 10);
     addCoins(coins, 69, 77, 8);
-    addLadder(ladders, 72, 12, 8);
+    addLadder(ladders, 69, 12, 8);
 
     enemies.push({
         x: 73 * TILE,
@@ -158,10 +158,10 @@ export function createLevel5Map() {
     addCoins(coins, 90, 91, 5);
     addCoins(coins, 93, 95, 4);
 
-    addLadder(ladders, 97, 12, 4);
-    platform(grid, 100, 4, 15);
-    addCoins(coins, 101, 114, 4);
-    addKey(keys, 113, 4);
+    addLadder(ladders, 101, 12, 6);
+    platform(grid, 100, 6, 15);
+    addCoins(coins, 101, 114, 6);
+    addKey(keys, 113, 6);
 
     enemies.push({
         x: 107 * TILE,
@@ -211,10 +211,10 @@ export function createLevel5Map() {
     addCoins(coins, 172, 173, 5);
     addCoins(coins, 175, 177, 3);
 
-    addLadder(ladders, 179, 12, 3);
-    platform(grid, 182, 3, 15);
-    addCoins(coins, 183, 196, 3);
-    addKey(keys, 195, 3);
+    addLadder(ladders, 183, 12, 6);
+    platform(grid, 182, 6, 15);
+    addCoins(coins, 183, 196, 6);
+    addKey(keys, 195, 6);
 
     enemies.push({
         x: 189 * TILE,
@@ -260,7 +260,7 @@ export function createLevel5Map() {
     addCoins(coins, 242, 243, 7);
     addCoins(coins, 245, 246, 5);
 
-    addLadder(ladders, 248, 12, 5);
+    addLadder(ladders, 253, 12, 5);
     platform(grid, 251, 5, 14);
     addCoins(coins, 252, 264, 5);
     addKey(keys, 263, 5);
@@ -308,7 +308,7 @@ export function createLevel5Map() {
     addCoins(coins, 323, 324, 7);
     addCoins(coins, 326, 327, 5);
 
-    addLadder(ladders, 329, 12, 5);
+    addLadder(ladders, 333, 12, 5);
     platform(grid, 332, 5, 12);
     addCoins(coins, 333, 343, 5);
     addKey(keys, 342, 5);
@@ -333,7 +333,7 @@ export function createLevel5Map() {
 
     const door = {
         x: 365 * TILE,
-        y: 10 * TILE,
+        y: 11.5 * TILE,
         width: 52,
         height: 120,
         col: 370,

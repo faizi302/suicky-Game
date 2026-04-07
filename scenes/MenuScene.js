@@ -59,6 +59,10 @@ export default class MenuScene {
 
         this.t = 0;
         this._syncAudioState();
+
+        // Ensure mobile controls are hidden on menu scene
+        window.__mobileGameActive = false;
+        if (window.updateMobileControls) window.updateMobileControls();
     }
 
     resize(width, height) {

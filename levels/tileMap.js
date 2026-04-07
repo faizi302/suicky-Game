@@ -180,7 +180,7 @@ export function createMap() {
     blockStack(grid, 42, 11, 1, 3);
     blockStack(grid, 50, 11, 1, 3);
 
-    addLadder(ladders, 50, 12, 6);
+    addLadder(ladders, 53, 12, 6);
     platform(grid, 49, 6, 10);
     addCoins(coins, 50, 57, 6);
 
@@ -208,7 +208,7 @@ export function createMap() {
         type: 1
     });
 
-    addLadder(ladders, 72, 12, 8);
+    addLadder(ladders, 73, 12, 8);
     platform(grid, 71, 8, 6);
     addCoins(coins, 72, 76, 8);
 
@@ -234,7 +234,7 @@ export function createMap() {
 
     const door = {
         x: 92 * TILE,
-        y: 12 * TILE - 38,
+        y: 12.5 * TILE - 38,
         width: 46,
         height: 70,
         col: 92,

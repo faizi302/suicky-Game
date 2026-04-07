@@ -104,18 +104,18 @@ export function createLevel8Map() {
     platform(grid, 20, 7, 2);
     platform(grid, 23, 5, 2);
     platform(grid, 26, 3, 2);
-    platform(grid, 29, 1, 3);
+    platform(grid, 29, 5, 3);
     addCoins(coins, 14, 15, 11);
     addCoins(coins, 17, 18, 9);
     addCoins(coins, 20, 21, 7);
     addCoins(coins, 23, 24, 5);
     addCoins(coins, 26, 27, 3);
-    addCoins(coins, 29, 31, 1);
+    addCoins(coins, 29, 31, 5);
 
-    addLadder(ladders, 33, 12, 1);
-    platform(grid, 36, 1, 16);
-    addCoins(coins, 37, 51, 1);
-    addKey(keys, 50, 1);
+    addLadder(ladders, 38, 12, 8);
+    platform(grid, 36, 8, 16);
+    addCoins(coins, 37, 51, 8);
+    addKey(keys, 54, 7);
 
     enemies.push({
         x: 43 * TILE,
@@ -160,20 +160,20 @@ export function createLevel8Map() {
     platform(grid, 103, 7, 2);
     platform(grid, 106, 5, 2);
     platform(grid, 109, 3, 2);
-    platform(grid, 112, 1, 2);
-    platform(grid, 115, 0, 3);
+    platform(grid, 112, 6, 2);
+    platform(grid, 115, 10, 3);
     addCoins(coins, 97, 98, 11);
     addCoins(coins, 100, 101, 9);
     addCoins(coins, 103, 104, 7);
     addCoins(coins, 106, 107, 5);
     addCoins(coins, 109, 110, 3);
-    addCoins(coins, 112, 113, 1);
-    addCoins(coins, 115, 117, 0);
+    addCoins(coins, 112, 113, 6);
+    addCoins(coins, 115, 117, 10);
 
-    addLadder(ladders, 119, 12, 0);
-    platform(grid, 122, 0, 17);
-    addCoins(coins, 123, 138, 0);
-    addKey(keys, 137, 0);
+    addLadder(ladders, 124, 12, 6);
+    platform(grid, 122, 6, 17);
+    addCoins(coins, 123, 138, 6);
+    addKey(keys, 137, 6);
 
     enemies.push({
         x: 130 * TILE,
@@ -199,7 +199,7 @@ export function createLevel8Map() {
     blockStack(grid, 161, 9, 1, 5);
     platform(grid, 164, 7, 11);
     addCoins(coins, 165, 174, 7);
-    addLadder(ladders, 169, 12, 7);
+    addLadder(ladders, 165, 12, 7);
 
     enemies.push({
         x: 170 * TILE,
@@ -215,20 +215,20 @@ export function createLevel8Map() {
     platform(grid, 184, 7, 2);
     platform(grid, 187, 5, 2);
     platform(grid, 190, 3, 2);
-    platform(grid, 193, 1, 2);
-    platform(grid, 196, 0, 3);
+    platform(grid, 193, 5, 2);
+    platform(grid, 196, 7, 3);
     addCoins(coins, 178, 179, 11);
     addCoins(coins, 181, 182, 9);
     addCoins(coins, 184, 185, 7);
     addCoins(coins, 187, 188, 5);
     addCoins(coins, 190, 191, 3);
-    addCoins(coins, 193, 194, 1);
-    addCoins(coins, 196, 198, 0);
+    addCoins(coins, 193, 194, 5);
+    addCoins(coins, 196, 198, 7);
 
-    addLadder(ladders, 200, 12, 0);
-    platform(grid, 203, 0, 18);
-    addCoins(coins, 204, 220, 0);
-    addKey(keys, 219, 0);
+    addLadder(ladders, 204, 12, 4);
+    platform(grid, 203, 4, 18);
+    addCoins(coins, 204, 220, 4);
+    addKey(keys, 219, 4);
 
     enemies.push({
         x: 212 * TILE,
@@ -254,7 +254,7 @@ export function createLevel8Map() {
     blockStack(grid, 243, 9, 1, 5);
     platform(grid, 246, 7, 11);
     addCoins(coins, 247, 256, 7);
-    addLadder(ladders, 251, 12, 7);
+    addLadder(ladders, 249, 12, 7);
 
     enemies.push({
         x: 252 * TILE,
@@ -270,20 +270,20 @@ export function createLevel8Map() {
     platform(grid, 266, 7, 2);
     platform(grid, 269, 5, 2);
     platform(grid, 272, 3, 2);
-    platform(grid, 275, 1, 2);
-    platform(grid, 278, 0, 3);
+    platform(grid, 275, 6, 2);
+    platform(grid, 278, 10, 3);
     addCoins(coins, 260, 261, 11);
     addCoins(coins, 263, 264, 9);
     addCoins(coins, 266, 267, 7);
     addCoins(coins, 269, 270, 5);
     addCoins(coins, 272, 273, 3);
-    addCoins(coins, 275, 276, 1);
-    addCoins(coins, 278, 280, 0);
+    addCoins(coins, 275, 276, 10);
+    addCoins(coins, 278, 280, 6);
 
-    addLadder(ladders, 282, 12, 0);
-    platform(grid, 285, 0, 18);
-    addCoins(coins, 286, 302, 0);
-    addKey(keys, 301, 0);
+    addLadder(ladders, 287, 12, 6);
+    platform(grid, 285, 6, 18);
+    addCoins(coins, 286, 302, 6);
+    addKey(keys, 301, 6);
 
     enemies.push({
         x: 294 * TILE,
@@ -309,7 +309,7 @@ export function createLevel8Map() {
     blockStack(grid, 325, 9, 1, 5);
     platform(grid, 328, 7, 11);
     addCoins(coins, 329, 338, 7);
-    addLadder(ladders, 333, 12, 7);
+    addLadder(ladders, 330, 12, 7);
 
     enemies.push({
         x: 334 * TILE,
@@ -325,20 +325,20 @@ export function createLevel8Map() {
     platform(grid, 348, 7, 2);
     platform(grid, 351, 5, 2);
     platform(grid, 354, 3, 2);
-    platform(grid, 357, 1, 2);
-    platform(grid, 360, 0, 3);
+    platform(grid, 357, 8, 2);
+    platform(grid, 360, 6, 3);
     addCoins(coins, 342, 343, 11);
     addCoins(coins, 345, 346, 9);
     addCoins(coins, 348, 349, 7);
     addCoins(coins, 351, 352, 5);
     addCoins(coins, 354, 355, 3);
-    addCoins(coins, 357, 358, 1);
-    addCoins(coins, 360, 362, 0);
+    addCoins(coins, 357, 358, 8);
+    addCoins(coins, 360, 362, 6);
 
-    addLadder(ladders, 364, 12, 0);
-    platform(grid, 367, 0, 18);
-    addCoins(coins, 368, 384, 0);
-    addKey(keys, 383, 0);
+    addLadder(ladders, 368, 12, 5);
+    platform(grid, 367, 5, 18);
+    addCoins(coins, 368, 384, 5);
+    addKey(keys, 383, 5);
 
     enemies.push({
         x: 376 * TILE,
@@ -364,7 +364,7 @@ export function createLevel8Map() {
     blockStack(grid, 407, 9, 1, 5);
     platform(grid, 410, 7, 11);
     addCoins(coins, 411, 420, 7);
-    addLadder(ladders, 415, 12, 7);
+    addLadder(ladders, 413, 12, 7);
 
     enemies.push({
         x: 416 * TILE,
@@ -412,7 +412,7 @@ export function createLevel8Map() {
 
     const door = {
         x: 484 * TILE,
-        y: 8 * TILE,
+        y: 11.5 * TILE,
         width: 52,
         height: 120,
         col: 484,

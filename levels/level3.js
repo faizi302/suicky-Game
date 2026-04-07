@@ -274,7 +274,7 @@ export function createLevel3Map() {
 
     const door = {
         x: 286 * TILE,
-        y: 10 * TILE,
+        y: 12 * TILE,
         width: 52,
         height: 120,
         col: 291,

@@ -19,40 +19,21 @@
         tabletMax: 1024
     };
 
-    function getViewportSize() {
-        const vv = window.visualViewport;
-        const w = Math.round(vv?.width || window.innerWidth || document.documentElement.clientWidth || 0);
-        const h = Math.round(vv?.height || window.innerHeight || document.documentElement.clientHeight || 0);
-        return {
-            w,
-            h,
-            short: Math.min(w, h),
-            long: Math.max(w, h)
-        };
-    }
-
-    function looksLikeMobileViewport() {
-        const { short, long } = getViewportSize();
-        return short <= BP.tabletMax || long <= 1400;
-    }
-
     function getDeviceClass() {
-        const { short } = getViewportSize();
+        const w = Math.min(window.innerWidth, screen.width || window.innerWidth);
+        const h = Math.min(window.innerHeight, screen.height || window.innerHeight);
+        const short = Math.min(w, h);
+        const hasTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
+        if (!hasTouch) return 'desktop';
         if (short <= BP.phoneMax) return 'phone';
         if (short <= BP.tabletMax) return 'tablet';
-        return 'desktop';
+        return 'touch-laptop';
     }
 
     function shouldShowControls() {
-        if (window.__mobileGameActive !== true) return false;
-
         const kind = getDeviceClass();
-        if (kind === 'phone' || kind === 'tablet') return true;
-
-        if (document.fullscreenElement && looksLikeMobileViewport()) return true;
-
-        return false;
+        return window.__mobileGameActive === true && (kind === 'phone' || kind === 'tablet');
     }
 
     function isPhone() {
@@ -97,20 +78,13 @@
     }
 
     function setControlsVisible(on) {
+        if (ctrVisible === on) return;
+
         ctrVisible = on;
         padWrap.classList.toggle('show', on);
         jumpWrap.classList.toggle('show', on);
 
-        if (on) {
-            padWrap.style.display = 'block';
-            jumpWrap.style.display = 'block';
-            padWrap.style.visibility = 'visible';
-            jumpWrap.style.visibility = 'visible';
-            padWrap.style.opacity = '1';
-            jumpWrap.style.opacity = '1';
-        } else {
-            padWrap.style.display = 'none';
-            jumpWrap.style.display = 'none';
+        if (!on) {
             releaseAll();
             resetStick();
             jumpTouchIds.clear();
@@ -119,7 +93,9 @@
     }
 
     function layoutControls() {
-        const { short } = getViewportSize();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const short = Math.min(vw, vh);
         const kind = getDeviceClass();
 
         let padSize = 0;
@@ -131,9 +107,6 @@
         } else if (kind === 'tablet') {
             padSize = Math.min(220, Math.max(120, short * 0.24));
             jumpSize = Math.min(170, Math.max(90, short * 0.18));
-        } else if (looksLikeMobileViewport()) {
-            padSize = Math.min(180, Math.max(96, short * 0.30));
-            jumpSize = Math.min(140, Math.max(76, short * 0.22));
         }
 
         if (padSize <= 0 || jumpSize <= 0) {
@@ -142,26 +115,21 @@
             return;
         }
 
+        padWrap.style.display = '';
+        jumpWrap.style.display = '';
+
         const padMargin = Math.max(10, padSize * 0.08);
         const jumpMargin = Math.max(10, jumpSize * 0.10);
-
-        padWrap.style.display = ctrVisible ? 'block' : 'none';
-        jumpWrap.style.display = ctrVisible ? 'block' : 'none';
-
-        padWrap.style.position = 'fixed';
-        jumpWrap.style.position = 'fixed';
 
         padWrap.style.width = `${padSize}px`;
         padWrap.style.height = `${padSize}px`;
         padWrap.style.left = `${padMargin}px`;
         padWrap.style.bottom = `${padMargin}px`;
-        padWrap.style.zIndex = '9998';
 
         jumpWrap.style.width = `${jumpSize}px`;
         jumpWrap.style.height = `${jumpSize}px`;
         jumpWrap.style.right = `${jumpMargin}px`;
         jumpWrap.style.bottom = `${jumpMargin}px`;
-        jumpWrap.style.zIndex = '9998';
     }
 
     function checkOrientation() {
@@ -170,8 +138,7 @@
             return;
         }
 
-        const { w, h } = getViewportSize();
-        const landscape = w > h;
+        const landscape = window.innerWidth > window.innerHeight;
         overlay.classList.toggle('visible', !landscape);
 
         if (!landscape) {
@@ -239,28 +206,20 @@
         }
     }
 
-    function updateMobileControlsNow() {
-        const visible = shouldShowControls();
+    document.addEventListener('fullscreenchange', () => {
+        setTimeout(updateMobileControls, 120);
+    });
 
-        setControlsVisible(visible);
+    document.addEventListener('webkitfullscreenchange', () => {
+        setTimeout(updateMobileControls, 120);
+    });
+
+    function updateMobileControlsNow() {
+        setControlsVisible(shouldShowControls());
         layoutControls();
         checkOrientation();
-
-        if (visible) {
-            padWrap.style.display = 'block';
-            jumpWrap.style.display = 'block';
-            padWrap.style.visibility = 'visible';
-            jumpWrap.style.visibility = 'visible';
-            padWrap.style.opacity = '1';
-            jumpWrap.style.opacity = '1';
-            padWrap.style.zIndex = '2147483647';
-            jumpWrap.style.zIndex = '2147483647';
-            padWrap.style.pointerEvents = 'auto';
-            jumpWrap.style.pointerEvents = 'auto';
-        }
-
-        console.log('mobile controls visible:', visible, 'active:', window.__mobileGameActive);
     }
+
     function updateMobileControls() {
         if (updateQueued) return;
         updateQueued = true;
@@ -270,16 +229,6 @@
             updateMobileControlsNow();
         });
     }
-
-    document.addEventListener('fullscreenchange', () => {
-        setTimeout(updateMobileControls, 120);
-        setTimeout(updateMobileControls, 300);
-        setTimeout(updateMobileControls, 600);
-    });
-
-    document.addEventListener('webkitfullscreenchange', () => {
-        setTimeout(updateMobileControls, 120);
-    });
 
     document.addEventListener('touchstart', (e) => {
         if (!shouldShowControls()) return;
@@ -334,10 +283,6 @@
     window.addEventListener('orientationchange', () => {
         setTimeout(updateMobileControls, 200);
     });
-
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', updateMobileControls);
-    }
 
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {

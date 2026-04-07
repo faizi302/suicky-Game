@@ -261,7 +261,7 @@ export function createLevel4Map() {
     addCoins(coins, 236, 237, 7);
     addCoins(coins, 239, 240, 5);
 
-    addLadder(ladders, 242, 12, 5);
+    // addLadder(ladders, 242, 12, 5);
     platform(grid, 245, 5, 14);
     addCoins(coins, 246, 258, 5);
     addKey(keys, 257, 5);
@@ -315,7 +315,7 @@ export function createLevel4Map() {
 
     const door = {
         x: 333 * TILE,
-        y: 10 * TILE,
+        y: 12 * TILE,
         width: 52,
         height: 120,
         col: 337,

@@ -110,7 +110,7 @@ export function createLevel6Map() {
     addCoins(coins, 23, 24, 5);
     addCoins(coins, 26, 28, 4);
 
-    addLadder(ladders, 30, 12, 4);
+    addLadder(ladders, 35, 12, 4);
     platform(grid, 33, 4, 14);
     addCoins(coins, 34, 46, 4);
     addKey(keys, 45, 4);
@@ -163,10 +163,10 @@ export function createLevel6Map() {
     addCoins(coins, 100, 101, 5);
     addCoins(coins, 103, 105, 3);
 
-    addLadder(ladders, 107, 12, 3);
-    platform(grid, 110, 3, 16);
-    addCoins(coins, 111, 125, 3);
-    addKey(keys, 124, 3);
+    addLadder(ladders, 114, 12, 6);
+    platform(grid, 110, 6, 16);
+    addCoins(coins, 111, 125, 6);
+    addKey(keys, 128, 8);
 
     enemies.push({
         x: 117 * TILE,
@@ -212,18 +212,18 @@ export function createLevel6Map() {
     platform(grid, 184, 7, 2);
     platform(grid, 187, 5, 2);
     platform(grid, 190, 3, 2);
-    platform(grid, 193, 2, 3);
+    platform(grid, 193, 8, 8);
     addCoins(coins, 178, 179, 11);
     addCoins(coins, 181, 182, 9);
     addCoins(coins, 184, 185, 7);
     addCoins(coins, 187, 188, 5);
     addCoins(coins, 190, 191, 3);
-    addCoins(coins, 193, 195, 2);
+    addCoins(coins, 193, 195, 8);
 
-    addLadder(ladders, 197, 12, 2);
-    platform(grid, 200, 2, 16);
-    addCoins(coins, 201, 215, 2);
-    addKey(keys, 214, 2);
+    addLadder(ladders, 203, 12, 7);
+    platform(grid, 200, 7, 16);
+    addCoins(coins, 201, 215, 7);
+    addKey(keys, 220, 4);
 
     enemies.push({
         x: 208 * TILE,
@@ -271,10 +271,10 @@ export function createLevel6Map() {
     addCoins(coins, 264, 265, 5);
     addCoins(coins, 267, 269, 3);
 
-    addLadder(ladders, 271, 12, 3);
-    platform(grid, 274, 3, 15);
-    addCoins(coins, 275, 288, 3);
-    addKey(keys, 287, 3);
+    addLadder(ladders, 275, 12, 7);
+    platform(grid, 274, 7, 15);
+    addCoins(coins, 275, 288, 7);
+    addKey(keys, 290, 5);
 
     enemies.push({
         x: 281 * TILE,
@@ -320,7 +320,7 @@ export function createLevel6Map() {
     addCoins(coins, 349, 350, 7);
     addCoins(coins, 352, 353, 5);
 
-    addLadder(ladders, 355, 12, 5);
+    addLadder(ladders, 360, 12, 5);
     platform(grid, 358, 5, 13);
     addCoins(coins, 359, 370, 5);
     addKey(keys, 369, 5);
@@ -344,8 +344,8 @@ export function createLevel6Map() {
     addCoins(coins, 394, 400, 9);
 
     const door = {
-        x: 406 * TILE,
-        y: 9 * TILE,
+        x: 404 * TILE,
+        y: 11.5 * TILE,
         width: 52,
         height: 120,
         col: 406,

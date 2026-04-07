@@ -247,7 +247,7 @@ toggleFullscreen() {
         const enoughKeys  = (this.ui.keys || 0) >= this.targetKeys;
         const wasOpen     = this.doorOpened;
 
-        this.doorOpened = enoughCoins && enoughKeys;
+        this.doorOpened = enoughKeys;
 
         if (this.doorOpened && !wasOpen && !this._doorSoundPlayed) {
             this._doorSoundPlayed = true;
