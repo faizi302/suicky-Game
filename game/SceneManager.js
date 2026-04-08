@@ -3,7 +3,7 @@ import LevelScene from '../scenes/levelScene.js';
 import GamePlayScene from '../scenes/GamePlayScene.js';
 import GamePauseScene from '../scenes/GamePauseScene.js';
 import WinScene from '../scenes/winScene.js';
-import { getTotalLatestScore } from '../system/progress.js'
+import { getTotalLatestScore } from '../system/progress.js';
 import {
     isAudioMuted as readAudioMuted,
     setAudioMuted as applyAudioMuted,
@@ -67,6 +67,20 @@ export default class SceneManager {
         return getTotalLatestScore();
     }
 
+    syncMobileUiState() {
+        const scene = this.currentSceneName;
+
+        const controlsScenes = new Set(['gameplay']);
+        const rotateScenes = new Set(['menu', 'levelselect', 'gameplay', 'pause', 'win']);
+
+        window.__mobileGameActive = controlsScenes.has(scene);
+        window.__requireLandscapeMode = rotateScenes.has(scene);
+
+        if (window.updateMobileControls) {
+            window.updateMobileControls();
+        }
+    }
+
     setScene(name, payload = null) {
         if (name === 'menu') {
             this._destroyCurrent();
@@ -80,6 +94,7 @@ export default class SceneManager {
             this.currentSceneName = 'menu';
             this.ensureMusic();
             this.currentScene.resize?.(this.width, this.height);
+            this.syncMobileUiState();
             return;
         }
 
@@ -89,6 +104,7 @@ export default class SceneManager {
             this.currentSceneName = 'levelselect';
             this.ensureMusic();
             this.currentScene.resize?.(this.width, this.height);
+            this.syncMobileUiState();
             return;
         }
 
@@ -107,6 +123,7 @@ export default class SceneManager {
             this.currentSceneName = 'gameplay';
             this.ensureMusic();
             this.currentScene.resize?.(this.width, this.height);
+            this.syncMobileUiState();
             return;
         }
 
@@ -119,6 +136,7 @@ export default class SceneManager {
             this.currentSceneName = 'pause';
             this.ensureMusic();
             this.currentScene.resize?.(this.width, this.height);
+            this.syncMobileUiState();
             return;
         }
 
@@ -129,6 +147,8 @@ export default class SceneManager {
             this.currentSceneName = 'win';
             this.ensureMusic();
             this.currentScene.resize?.(this.width, this.height);
+            this.syncMobileUiState();
+            return;
         }
     }
 
@@ -162,27 +182,27 @@ export default class SceneManager {
         this.currentScene = null;
     }
 
-toggleFullscreen() {
-    const root = document.getElementById('game-root') || this.canvas;
+    toggleFullscreen() {
+        const root = document.getElementById('game-root') || this.canvas;
 
-    if (!document.fullscreenElement) {
-        const fn =
-            root.requestFullscreen ||
-            root.webkitRequestFullscreen ||
-            root.msRequestFullscreen;
-        if (fn) fn.call(root);
-    } else {
-        const fn =
-            document.exitFullscreen ||
-            document.webkitExitFullscreen ||
-            document.msExitFullscreen;
-        if (fn) fn.call(document);
+        if (!document.fullscreenElement) {
+            const fn =
+                root.requestFullscreen ||
+                root.webkitRequestFullscreen ||
+                root.msRequestFullscreen;
+            if (fn) fn.call(root);
+        } else {
+            const fn =
+                document.exitFullscreen ||
+                document.webkitExitFullscreen ||
+                document.msExitFullscreen;
+            if (fn) fn.call(document);
+        }
+
+        setTimeout(() => {
+            if (window.updateMobileControls) window.updateMobileControls();
+        }, 120);
     }
-
-    setTimeout(() => {
-        if (window.updateMobileControls) window.updateMobileControls();
-    }, 120);
-}
 
     update(dt) {
         if (this.currentSceneName === 'pause') {

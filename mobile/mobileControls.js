@@ -31,13 +31,17 @@
         return 'touch-laptop';
     }
 
-    function shouldShowControls() {
+    function isSmallTouchDevice() {
         const kind = getDeviceClass();
-        return window.__mobileGameActive === true && (kind === 'phone' || kind === 'tablet');
+        return kind === 'phone' || kind === 'tablet';
     }
 
-    function isPhone() {
-        return getDeviceClass() === 'phone';
+    function shouldShowControls() {
+        return window.__mobileGameActive === true && isSmallTouchDevice();
+    }
+
+    function shouldRequireLandscape() {
+        return window.__requireLandscapeMode === true && isSmallTouchDevice();
     }
 
     function pressKey(key) {
@@ -77,6 +81,12 @@
         stickTouchId = null;
     }
 
+    function resetJump() {
+        jumpTouchIds.clear();
+        releaseKey(' ');
+        jumpWrap.classList.remove('pressed');
+    }
+
     function setControlsVisible(on) {
         if (ctrVisible === on) return;
 
@@ -87,8 +97,7 @@
         if (!on) {
             releaseAll();
             resetStick();
-            jumpTouchIds.clear();
-            jumpWrap.classList.remove('pressed');
+            resetJump();
         }
     }
 
@@ -133,7 +142,7 @@
     }
 
     function checkOrientation() {
-        if (!window.__mobileGameActive || !isPhone()) {
+        if (!shouldRequireLandscape()) {
             overlay.classList.remove('visible');
             return;
         }
@@ -144,8 +153,7 @@
         if (!landscape) {
             releaseAll();
             resetStick();
-            jumpTouchIds.clear();
-            jumpWrap.classList.remove('pressed');
+            resetJump();
         }
     }
 
@@ -273,9 +281,7 @@
 
     document.addEventListener('touchcancel', () => {
         resetStick();
-        jumpTouchIds.clear();
-        releaseKey(' ');
-        jumpWrap.classList.remove('pressed');
+        resetJump();
     }, { passive: true });
 
     window.addEventListener('resize', updateMobileControls);
@@ -288,14 +294,21 @@
         if (document.hidden) {
             releaseAll();
             resetStick();
-            jumpTouchIds.clear();
-            jumpWrap.classList.remove('pressed');
+            resetJump();
         } else {
             updateMobileControls();
         }
     });
 
     window.updateMobileControls = updateMobileControls;
+
+    if (typeof window.__mobileGameActive === 'undefined') {
+        window.__mobileGameActive = false;
+    }
+
+    if (typeof window.__requireLandscapeMode === 'undefined') {
+        window.__requireLandscapeMode = false;
+    }
 
     updateMobileControlsNow();
 })();
