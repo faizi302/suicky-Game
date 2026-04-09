@@ -145,25 +145,7 @@ export default class Player {
         playSound('snd_lock_tremble', 0.55, 220, true);
     }
 
-    resolveMovingPlatforms(platforms) {
-        if (!platforms || !platforms.length) return;
-
-        for (const p of platforms) {
-            const overlapX = this.x + this.width > p.x && this.x < p.x + p.width;
-            if (!overlapX) continue;
-
-            const feetWere = this.y + this.height - this.vy;
-            const feetNow = this.y + this.height;
-
-            if (feetWere <= p.y + 4 && feetNow >= p.y && this.vy >= 0) {
-                this.y = p.y - this.height;
-                this.vy = 0;
-                this.onGround = true;
-            }
-        }
-    }
-
-    update(keys, dt, map, movingPlatforms = []) {
+    update(keys, dt, map) {
         if (!this.alive) {
             this._updateDeath(dt);
             return;
@@ -173,7 +155,7 @@ export default class Player {
         const right = keys['ArrowRight'] || keys['d'] || keys['D'];
         const wantsUp = keys['ArrowUp'] || keys['w'] || keys['W'];
         const wantsDown = keys['ArrowDown'] || keys['s'] || keys['S'];
-        const wantsJump = keys[' '];
+        const wantsJump = keys[' '] ;
 
         this._moveIntent = !!(left || right);
 
@@ -224,7 +206,6 @@ export default class Player {
 
         applyGravity(this);
         resolveMapCollision(this, map, this.tileSize);
-        this.resolveMovingPlatforms(movingPlatforms);
 
         if (this.x < this.tileSize) {
             this.x = this.tileSize;

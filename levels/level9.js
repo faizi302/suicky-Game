@@ -109,8 +109,15 @@ export function createLevel9Map() {
 
     carveGap(grid, 22, 6, groundRow);
     movingPlatforms.push({
-        x: 23 * TILE, y: 10 * TILE, width: 3 * TILE, height: TILE,
-        axis: 'y', speed: 1.4, min: 8 * TILE, max: 11 * TILE, tileType: CEMENT
+        x: 23 * TILE,
+        y: 10 * TILE,
+        width: 3 * TILE,
+        height: TILE,
+        axis: 'y',
+        speed: 1.4,
+        min: 8 * TILE,
+        max: 11 * TILE,
+        frameIndices: [9, 10, 11]
     });
     addCoins(coins, 23, 25, 9);
 

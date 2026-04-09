@@ -530,64 +530,81 @@ export default class Game {
         }
     }
 
-    getMovingPlatformFrames(p, numTiles) {
-        const isCement = p.tileType === 6 || p.tileType === 7 || p.tileType === 8;
-
-        if (isCement) {
-            if (numTiles <= 1) return [7];
-            if (numTiles === 2) return [6, 8];
-            return [6, ...Array(Math.max(0, numTiles - 2)).fill(7), 8];
+getMovingPlatformFrames(p, numTiles) {
+    // Highest priority: exact frames passed from level data
+    if (Array.isArray(p.frameIndices) && p.frameIndices.length) {
+        if (numTiles <= 1) {
+            return [p.frameIndices[1] ?? p.frameIndices[0]];
         }
-
-        // fallback wood trio
-        if (numTiles <= 1) return [1];
-        if (numTiles === 2) return [0, 2];
-        return [0, ...Array(Math.max(0, numTiles - 2)).fill(1), 2];
+        if (numTiles === 2) {
+            return [
+                p.frameIndices[0],
+                p.frameIndices[2] ?? p.frameIndices[1] ?? p.frameIndices[0]
+            ];
+        }
+        return [
+            p.frameIndices[0],
+            ...Array(Math.max(0, numTiles - 2)).fill(
+                p.frameIndices[1] ?? p.frameIndices[0]
+            ),
+            p.frameIndices[2] ?? p.frameIndices[1] ?? p.frameIndices[0]
+        ];
     }
 
-    drawMovingPlatforms(ctx) {
-        if (!this.movingPlatforms || !this.movingPlatforms.length) return;
+    // Old cement fallback
+    const isCement = p.tileType === 6 || p.tileType === 7 || p.tileType === 8;
 
-        const img = document.getElementById('img_blocks')
-            || document.getElementById('blocks')
-            || document.getElementById('img_tiles')
-            || document.getElementById('tiles');
+    if (isCement) {
+        if (numTiles <= 1) return [7];
+        if (numTiles === 2) return [6, 8];
+        return [6, ...Array(Math.max(0, numTiles - 2)).fill(7), 8];
+    }
 
-        if (!img || !img.complete || img.naturalWidth === 0) return;
+    // Default wood fallback
+    if (numTiles <= 1) return [1];
+    if (numTiles === 2) return [0, 2];
+    return [0, ...Array(Math.max(0, numTiles - 2)).fill(1), 2];
+}
 
-        const FRAME_COUNT = 12;
-        const frameW = img.naturalWidth / FRAME_COUNT;
-        const frameH = img.naturalHeight;
+drawMovingPlatforms(ctx) {
+    if (!this.movingPlatforms || !this.movingPlatforms.length) return;
 
-        // trims transparent side padding inside each source frame
-        const SRC_INSET_X = 10;
-        const srcW = frameW - SRC_INSET_X * 2;
+    const img = document.getElementById('img_blocks')
+        || document.getElementById('blocks')
+        || document.getElementById('img_tiles')
+        || document.getElementById('tiles');
 
-        for (const p of this.movingPlatforms) {
-            const screenX = Math.round(p.x - this.camera.x);
-            const screenY = Math.round(p.y - this.camera.y);
+    if (!img || !img.complete || img.naturalWidth === 0) return;
 
-            if (screenX + p.width < 0 || screenX > this.camera.viewW) continue;
-            if (screenY + p.height < 0 || screenY > this.camera.viewH) continue;
+    // NEW blocks.png = 1800 x 120 with 15 frames in 1 row
+    const FRAME_COUNT = 15;
+    const frameW = img.naturalWidth / FRAME_COUNT;   // 120
+    const frameH = img.naturalHeight;                // 120
 
-            const numTiles = Math.max(1, Math.round(p.width / this.tileSize));
-            const frames = this.getMovingPlatformFrames(p, numTiles);
+    for (const p of this.movingPlatforms) {
+        const screenX = Math.round(p.x - this.camera.x);
+        const screenY = Math.round(p.y - this.camera.y);
 
-            for (let i = 0; i < numTiles; i++) {
-                const frameIdx = frames[Math.min(i, frames.length - 1)];
+        if (screenX + p.width < 0 || screenX > this.camera.viewW) continue;
+        if (screenY + p.height < 0 || screenY > this.camera.viewH) continue;
 
-                // tiny overlap removes visible seams
-                const dx = Math.floor(screenX + i * (this.tileSize - 1));
-                const dy = Math.floor(screenY);
-                const dw = this.tileSize + 1;
-                const dh = this.tileSize;
+        const numTiles = Math.max(1, Math.round(p.width / this.tileSize));
+        const frames = this.getMovingPlatformFrames(p, numTiles);
 
-                ctx.drawImage(
-                    img,
-                    frameIdx * frameW + SRC_INSET_X, 0, srcW, frameH,
-                    dx, dy, dw, dh
-                );
-            }
+        for (let i = 0; i < numTiles; i++) {
+            const frameIdx = frames[Math.min(i, frames.length - 1)];
+
+            const dx = Math.round(screenX + i * this.tileSize);
+            const dy = Math.round(screenY);
+            const dw = this.tileSize;
+            const dh = this.tileSize;
+
+            ctx.drawImage(
+                img,
+                frameIdx * frameW, 0, frameW, frameH,
+                dx, dy, dw, dh
+            );
         }
     }
+}
 }
