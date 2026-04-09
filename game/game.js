@@ -1,11 +1,11 @@
 /**
  * game.js
  *
- * Camera zoom is now COMPUTED from the virtual canvas dimensions passed in
- * (width × height) so the visible game-world area is the same on every device.
- *
- * With the fixed VIRT_W=915 / VIRT_H=412 from main_scenes.js the zoom
- * calculation gives the same result everywhere, matching the PC experience.
+ * Moving platform updates:
+ * - vertical platforms keep X locked
+ * - horizontal platforms keep Y locked
+ * - cement platforms use exact frames 6,7,8 from blocks.png
+ * - tiles draw with a tiny overlap and source trim to remove seams
  */
 
 import Player, { playSound } from '../characters/player.js';
@@ -18,17 +18,6 @@ import { createCamera } from './camera.js';
 import { rectsOverlap } from './collision.js';
 import { saveLevelSnapshot } from '../system/progress.js';
 
-// ── Camera zoom helper ─────────────────────────────────────────────────────
-/**
- * Compute a camera zoom so that the visible vertical world-space always
- * fits a target number of tile-rows (targetRows) inside the canvas height.
- *
- * targetRows = how many 40-px tiles should fit vertically on screen.
- * This value was tuned so the PC view (412 px tall, zoom≈1.7) shows ~6 rows.
- *
- * On every device with a fixed VIRT_H=412 this returns the same zoom,
- * giving an identical game-world area on mobile and desktop.
- */
 function computeZoom(canvasW, canvasH, tileSize, targetRows) {
     const worldVisible = targetRows * tileSize;
     const zoomByH = canvasH / worldVisible;
@@ -67,20 +56,20 @@ export default class Game {
         this.initInput();
     }
 
-resize(width, height) {
-    this.width = width;
-    this.height = height;
+    resize(width, height) {
+        this.width = width;
+        this.height = height;
 
-    if (!this.camera) return;
+        if (!this.camera) return;
 
-    const autoZoom = computeZoom(width, height, this.tileSize, CAMERA_TARGET_ROWS);
+        const autoZoom = computeZoom(width, height, this.tileSize, CAMERA_TARGET_ROWS);
 
-    this.camera.resize(width, height);
-    this.camera.minZoom = autoZoom;
-    this.camera.maxZoom = autoZoom;
-    this.camera.setZoom(autoZoom);
-    this.camera.clamp(this.worldWidth, this.worldHeight);
-}
+        this.camera.resize(width, height);
+        this.camera.minZoom = autoZoom;
+        this.camera.maxZoom = autoZoom;
+        this.camera.setZoom(autoZoom);
+        this.camera.clamp(this.worldWidth, this.worldHeight);
+    }
 
     setLevel(levelId = 1) {
         this.currentLevelId = Number(levelId) || 1;
@@ -94,7 +83,7 @@ resize(width, height) {
         this.levelData = level;
         this.mapRows = this.map.length;
         this.mapCols = this.map[0].length;
-        this.worldWidth  = this.mapCols * this.tileSize;
+        this.worldWidth = this.mapCols * this.tileSize;
         this.worldHeight = this.mapRows * this.tileSize;
 
         if (this.ui && typeof this.ui.destroy === 'function') {
@@ -104,49 +93,50 @@ resize(width, height) {
         this.ui = new UI(this.canvas, this.sceneManager);
         this.player = new Player(this);
 
-        // ── Camera zoom: calculated so the visible area is the same on
-        //    every device.  targetRows=6.1 was chosen to match the original
-        //    PC appearance (412px canvas, zoom≈1.7 → viewH≈242 ≈ 6 rows).
-        //    Because main_scenes.js now always passes VIRT_H=412, this
-        //    produces zoom≈1.69 everywhere.
-    //    const targetRows = 9.5;
-const autoZoom = computeZoom(this.width, this.height, this.tileSize, CAMERA_TARGET_ROWS);
+        const autoZoom = computeZoom(this.width, this.height, this.tileSize, CAMERA_TARGET_ROWS);
 
-this.camera = createCamera(this.width, this.height, {
-    zoom: autoZoom,
-    minZoom: autoZoom,
-    maxZoom: autoZoom,
-    followOffsetX: 0.36,
-    deadZoneW: 110,
-    followStrengthX: 0.18,
-    lockY: true,
-    groundPadding: 80
-});
+        this.camera = createCamera(this.width, this.height, {
+            zoom: autoZoom,
+            minZoom: autoZoom,
+            maxZoom: autoZoom,
+            followOffsetX: 0.36,
+            deadZoneW: 110,
+            followStrengthX: 0.18,
+            lockY: true,
+            groundPadding: 80
+        });
 
         this.enemies = (level.enemies || []).map(enemy =>
             new Enemy(this, enemy.x, enemy.y, enemy.patrolLeft, enemy.patrolRight, enemy.type)
         );
 
+        this.movingPlatforms = (level.movingPlatforms || []).map(p => ({
+            ...p,
+            _dir: 1,
+            _baseX: p.x,
+            _baseY: p.y
+        }));
+
         this.items = [
-            ...(level.coins  || []).map(coin  => new Coin(coin.x,  coin.y,  'coin')),
-            ...(level.keys   || []).map(key   => new Coin(key.x,   key.y,   'key')),
+            ...(level.coins || []).map(coin => new Coin(coin.x, coin.y, 'coin')),
+            ...(level.keys || []).map(key => new Coin(key.x, key.y, 'key')),
             ...(level.knives || []).map(knife => new Coin(knife.x, knife.y, 'knife'))
         ];
 
         this.ui.totalCoins = (level.coins || []).length;
-        this.ui.keys       = 0;
-        this.ui.totalKeys  = (level.keys  || []).length;
-        this.targetKeys    = (level.keys  || []).length;
+        this.ui.keys = 0;
+        this.ui.totalKeys = (level.keys || []).length;
+        this.targetKeys = (level.keys || []).length;
 
-        this.dead              = false;
-        this._deathPending     = false;
-        this.missionComplete   = false;
-        this.winSceneOpened    = false;
-        this.doorOpened        = false;
-        this._doorSoundPlayed  = false;
+        this.dead = false;
+        this._deathPending = false;
+        this.missionComplete = false;
+        this.winSceneOpened = false;
+        this.doorOpened = false;
+        this._doorSoundPlayed = false;
         this._doorLockedHintTimer = 0;
-        this.climbGuideLadder  = null;
-        this.doorGuideVisible  = false;
+        this.climbGuideLadder = null;
+        this.doorGuideVisible = false;
     }
 
     initInput() {
@@ -171,27 +161,27 @@ this.camera = createCamera(this.width, this.height, {
         });
     }
 
-toggleFullscreen() {
-    const root = document.getElementById('game-root') || this.canvas;
+    toggleFullscreen() {
+        const root = document.getElementById('game-root') || this.canvas;
 
-    if (!document.fullscreenElement) {
-        (
-            root.requestFullscreen ||
-            root.webkitRequestFullscreen ||
-            root.msRequestFullscreen
-        )?.call(root);
-    } else {
-        (
-            document.exitFullscreen ||
-            document.webkitExitFullscreen ||
-            document.msExitFullscreen
-        )?.call(document);
+        if (!document.fullscreenElement) {
+            (
+                root.requestFullscreen ||
+                root.webkitRequestFullscreen ||
+                root.msRequestFullscreen
+            )?.call(root);
+        } else {
+            (
+                document.exitFullscreen ||
+                document.webkitExitFullscreen ||
+                document.msExitFullscreen
+            )?.call(document);
+        }
+
+        setTimeout(() => {
+            if (window.updateMobileControls) window.updateMobileControls();
+        }, 120);
     }
-
-    setTimeout(() => {
-        if (window.updateMobileControls) window.updateMobileControls();
-    }, 120);
-}
 
     onPlayerDeath() {
         if (this.dead || this.missionComplete) return;
@@ -199,9 +189,9 @@ toggleFullscreen() {
         this.dead = true;
         this._deathPending = false;
 
-        this.ui.gameOver    = true;
+        this.ui.gameOver = true;
         this.ui.showGameOver = true;
-        this.ui.win         = false;
+        this.ui.win = false;
 
         playSound('snd_game_over_lose', 0.82, 100, true);
     }
@@ -209,7 +199,7 @@ toggleFullscreen() {
     updateLadderState() {
         this.climbGuideLadder = null;
 
-        const player  = this.player;
+        const player = this.player;
         const ladders = this.levelData?.ladders || [];
         let touchingLadder = null;
 
@@ -221,17 +211,20 @@ toggleFullscreen() {
                 player.y + player.height >= ladder.y - 8 &&
                 player.y <= ladder.y + ladder.height + 8;
 
-            if (inX && inY) { touchingLadder = ladder; break; }
+            if (inX && inY) {
+                touchingLadder = ladder;
+                break;
+            }
         }
 
-        player.showClimbGuide  = Boolean(touchingLadder);
+        player.showClimbGuide = Boolean(touchingLadder);
 
         if (!player.isClimbing) {
             player.currentLadder = touchingLadder;
         }
 
         const wantsClimb =
-            this.keys['ArrowUp']   || this.keys['w'] || this.keys['W'] ||
+            this.keys['ArrowUp'] || this.keys['w'] || this.keys['W'] ||
             this.keys['ArrowDown'] || this.keys['s'] || this.keys['S'];
 
         if (touchingLadder) {
@@ -244,8 +237,8 @@ toggleFullscreen() {
 
     updateDoorState() {
         const enoughCoins = this.ui.coins >= (this.levelData?.totalCoinsRequiredToOpenDoor || 0);
-        const enoughKeys  = (this.ui.keys || 0) >= this.targetKeys;
-        const wasOpen     = this.doorOpened;
+        const enoughKeys = (this.ui.keys || 0) >= this.targetKeys;
+        const wasOpen = this.doorOpened;
 
         this.doorOpened = enoughKeys;
 
@@ -278,20 +271,20 @@ toggleFullscreen() {
             this.keys['ArrowUp'] || this.keys['w'] || this.keys['W'];
 
         if (touchingDoor && this.doorOpened && wantsOpen) {
-            this.missionComplete   = true;
-            this.ui.win            = true;
-            this.ui.gameOver       = false;
-            this.ui.showGameOver   = false;
+            this.missionComplete = true;
+            this.ui.win = true;
+            this.ui.gameOver = false;
+            this.ui.showGameOver = false;
 
             saveLevelSnapshot(this.currentLevelId, {
-                latestScore: this.ui.score  || 0,
-                score:       this.ui.score  || 0,
-                coins:       this.ui.coins  || 0,
-                totalCoins:  this.ui.totalCoins || 0,
-                keys:        this.ui.keys   || 0,
-                totalKeys:   this.ui.totalKeys  || 0,
-                win:         true,
-                completed:   true
+                latestScore: this.ui.score || 0,
+                score: this.ui.score || 0,
+                coins: this.ui.coins || 0,
+                totalCoins: this.ui.totalCoins || 0,
+                keys: this.ui.keys || 0,
+                totalKeys: this.ui.totalKeys || 0,
+                win: true,
+                completed: true
             }, { completed: true });
 
             playSound('snd_game_over_win', 0.85, 100, true);
@@ -306,7 +299,7 @@ toggleFullscreen() {
         }
 
         if (this._deathPending) {
-            this.player.update(this.keys, dt, this.map);
+            this.player.update(this.keys, dt, this.map, this.movingPlatforms);
             this.camera.follow(this.player, this.worldWidth, this.worldHeight, dt);
             this.ui.update(dt);
             if (this.player.deadDone) this.onPlayerDeath();
@@ -317,7 +310,8 @@ toggleFullscreen() {
         if (this.ui.gameOver || this.missionComplete) return;
 
         this.updateLadderState();
-        this.player.update(this.keys, dt, this.map);
+        this.updateMovingPlatforms(dt);
+        this.player.update(this.keys, dt, this.map, this.movingPlatforms);
         this.camera.follow(this.player, this.worldWidth, this.worldHeight, dt);
 
         for (const enemy of this.enemies) {
@@ -330,8 +324,8 @@ toggleFullscreen() {
                 enemy.x, enemy.y, enemy.width, enemy.height
             )) {
                 const playerBottom = this.player.y + this.player.height;
-                const enemyTop     = enemy.y + 10;
-                const stompHit     = playerBottom <= enemyTop + 14 && this.player.vy > 1.2;
+                const enemyTop = enemy.y + 10;
+                const stompHit = playerBottom <= enemyTop + 14 && this.player.vy > 1.2;
 
                 if (stompHit) {
                     enemy.die();
@@ -369,6 +363,7 @@ toggleFullscreen() {
 
             if (!item.collected) {
                 item.collect();
+
                 if (item.type === 'coin') {
                     this.ui.addCoin();
                     this.player.onCoinCollected();
@@ -397,8 +392,9 @@ toggleFullscreen() {
 
         this.drawBackground(ctx);
         drawMap(ctx, this.map, this.tileSize, this.camera, this.levelData, this.doorOpened);
+        this.drawMovingPlatforms(ctx);
 
-        for (const item  of this.items)   item.draw(ctx, this.camera);
+        for (const item of this.items) item.draw(ctx, this.camera);
         for (const enemy of this.enemies) enemy.draw(ctx, this.camera);
         this.player.draw(ctx, this.camera);
 
@@ -407,19 +403,18 @@ toggleFullscreen() {
 
         ctx.restore();
 
-        // UI always drawn in virtual-canvas space (VIRT_W × VIRT_H)
         this.ui.draw(ctx, this.width, this.height);
     }
 
     drawBackground(ctx) {
-        const bg    = this.bg;
+        const bg = this.bg;
         const viewH = this.camera.viewH;
 
         if (bg && bg.complete && bg.naturalWidth > 0) {
-            const drawHeight  = viewH;
-            const drawWidth   = bg.naturalWidth * (drawHeight / bg.naturalHeight);
-            const parallaxX   = -(this.camera.parallaxX * 0.2);
-            const firstX      = Math.floor(parallaxX % drawWidth) - drawWidth;
+            const drawHeight = viewH;
+            const drawWidth = bg.naturalWidth * (drawHeight / bg.naturalHeight);
+            const parallaxX = -(this.camera.parallaxX * 0.2);
+            const firstX = Math.floor(parallaxX % drawWidth) - drawWidth;
 
             for (let x = firstX; x < this.camera.viewW + drawWidth; x += drawWidth) {
                 ctx.drawImage(bg, x, 0, drawWidth, drawHeight);
@@ -444,7 +439,7 @@ toggleFullscreen() {
         const x = Math.floor(ladder.x - this.camera.x + ladder.width / 2 - 22);
         const y = Math.floor(ladder.y - this.camera.y - 48);
 
-        const frameW = Math.round(img.naturalWidth  / 2);
+        const frameW = Math.round(img.naturalWidth / 2);
         const frameH = Math.round(img.naturalHeight / 4);
         ctx.drawImage(img, 0, 0, frameW, frameH, x, y, 44, 44);
     }
@@ -458,7 +453,7 @@ toggleFullscreen() {
 
         ctx.save();
         ctx.textAlign = 'center';
-        ctx.font      = 'bold 16px Arial';
+        ctx.font = 'bold 16px Arial';
 
         if (!this.doorOpened) {
             ctx.fillStyle = 'rgba(0,0,0,0.72)';
@@ -467,7 +462,7 @@ toggleFullscreen() {
         } else if (this.doorGuideVisible) {
             const img = document.getElementById('help_keyboard');
             if (img && img.complete && img.naturalWidth > 0) {
-                const frameW = Math.round(img.naturalWidth  / 2);
+                const frameW = Math.round(img.naturalWidth / 2);
                 const frameH = Math.round(img.naturalHeight / 4);
                 ctx.drawImage(img, 0, 0, frameW, frameH, x - 22, y - 52, 44, 44);
             } else {
@@ -476,5 +471,123 @@ toggleFullscreen() {
             }
         }
         ctx.restore();
+    }
+
+    updateMovingPlatforms(dt = 16.67) {
+        if (!this.movingPlatforms || !this.movingPlatforms.length) return;
+
+        const player = this.player;
+        const step = dt / 16.67;
+
+        for (const p of this.movingPlatforms) {
+            if (p._baseX == null) p._baseX = p.x;
+            if (p._baseY == null) p._baseY = p.y;
+            if (p._dir == null) p._dir = 1;
+
+            const prevX = p.x;
+            const prevY = p.y;
+
+            if (p.axis === 'x') {
+                p.y = p._baseY;
+                p.x += p.speed * step * p._dir;
+
+                if (p.x >= p.max) {
+                    p.x = p.max;
+                    p._dir = -1;
+                }
+                if (p.x <= p.min) {
+                    p.x = p.min;
+                    p._dir = 1;
+                }
+            } else {
+                p.x = p._baseX;
+                p.y += p.speed * step * p._dir;
+
+                if (p.y >= p.max) {
+                    p.y = p.max;
+                    p._dir = -1;
+                }
+                if (p.y <= p.min) {
+                    p.y = p.min;
+                    p._dir = 1;
+                }
+            }
+
+            const dx = p.x - prevX;
+            const dy = p.y - prevY;
+
+            const onPlatform =
+                player.alive &&
+                !player.isClimbing &&
+                player.x + player.width > p.x &&
+                player.x < p.x + p.width &&
+                Math.abs((player.y + player.height) - prevY) < 8;
+
+            if (onPlatform) {
+                player.x += dx;
+                player.y += dy;
+            }
+        }
+    }
+
+    getMovingPlatformFrames(p, numTiles) {
+        const isCement = p.tileType === 6 || p.tileType === 7 || p.tileType === 8;
+
+        if (isCement) {
+            if (numTiles <= 1) return [7];
+            if (numTiles === 2) return [6, 8];
+            return [6, ...Array(Math.max(0, numTiles - 2)).fill(7), 8];
+        }
+
+        // fallback wood trio
+        if (numTiles <= 1) return [1];
+        if (numTiles === 2) return [0, 2];
+        return [0, ...Array(Math.max(0, numTiles - 2)).fill(1), 2];
+    }
+
+    drawMovingPlatforms(ctx) {
+        if (!this.movingPlatforms || !this.movingPlatforms.length) return;
+
+        const img = document.getElementById('img_blocks')
+            || document.getElementById('blocks')
+            || document.getElementById('img_tiles')
+            || document.getElementById('tiles');
+
+        if (!img || !img.complete || img.naturalWidth === 0) return;
+
+        const FRAME_COUNT = 12;
+        const frameW = img.naturalWidth / FRAME_COUNT;
+        const frameH = img.naturalHeight;
+
+        // trims transparent side padding inside each source frame
+        const SRC_INSET_X = 10;
+        const srcW = frameW - SRC_INSET_X * 2;
+
+        for (const p of this.movingPlatforms) {
+            const screenX = Math.round(p.x - this.camera.x);
+            const screenY = Math.round(p.y - this.camera.y);
+
+            if (screenX + p.width < 0 || screenX > this.camera.viewW) continue;
+            if (screenY + p.height < 0 || screenY > this.camera.viewH) continue;
+
+            const numTiles = Math.max(1, Math.round(p.width / this.tileSize));
+            const frames = this.getMovingPlatformFrames(p, numTiles);
+
+            for (let i = 0; i < numTiles; i++) {
+                const frameIdx = frames[Math.min(i, frames.length - 1)];
+
+                // tiny overlap removes visible seams
+                const dx = Math.floor(screenX + i * (this.tileSize - 1));
+                const dy = Math.floor(screenY);
+                const dw = this.tileSize + 1;
+                const dh = this.tileSize;
+
+                ctx.drawImage(
+                    img,
+                    frameIdx * frameW + SRC_INSET_X, 0, srcW, frameH,
+                    dx, dy, dw, dh
+                );
+            }
+        }
     }
 }

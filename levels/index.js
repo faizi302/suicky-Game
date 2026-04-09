@@ -6,16 +6,24 @@ import { createLevel5Map } from './level5.js';
 import { createLevel6Map } from './level6.js';
 import { createLevel7Map } from './level7.js';
 import { createLevel8Map } from './level8.js';
+import { createLevel9Map } from './level9.js';
+import { createLevel10Map } from './level10.js';
+import { createLevel11Map } from './level11.js';
+import { createLevel12Map } from './level12.js';
 
 const LEVEL_BUILDERS = {
-    1: createMap,
-    2: createLevel2Map,
-    3: createLevel3Map,
-    4: createLevel4Map,
-    5: createLevel5Map,
-    6: createLevel6Map,
-    7: createLevel7Map,
-    8: createLevel8Map
+    1:  createMap,
+    2:  createLevel2Map,
+    3:  createLevel3Map,
+    4:  createLevel4Map,
+    5:  createLevel5Map,
+    6:  createLevel6Map,
+    7:  createLevel7Map,
+    8:  createLevel8Map,
+    9:  createLevel9Map,
+    10: createLevel10Map,
+    11: createLevel11Map,
+    12: createLevel12Map
 };
 
 export function getLevelData(levelId = 1) {
