@@ -27,6 +27,8 @@ export default class SceneManager {
         this.currentSceneName = '';
         this.lastWinData = null;
 
+        this.autoPausedByVisibility = false;
+
         this.ensureMusic();
         this.setScene('menu');
     }
@@ -45,8 +47,9 @@ export default class SceneManager {
     }
 
     ensureMusic() {
-        setMusicVolume(this.currentSceneName === 'pause' ? 0.12 : 0.35);
-        playMusic(this.currentSceneName === 'pause' ? 0.12 : 0.35);
+        const lowVol = this.currentSceneName === 'pause' ? 0.12 : 0.35;
+        setMusicVolume(lowVol);
+        playMusic(lowVol);
     }
 
     isAudioMuted() {
@@ -81,12 +84,49 @@ export default class SceneManager {
         }
     }
 
+    isGameplayActive() {
+        return this.currentSceneName === 'gameplay';
+    }
+
+    isPauseActive() {
+        return this.currentSceneName === 'pause';
+    }
+
+    pauseGameplay(auto = false) {
+        if (!this.gamePlayScene) return;
+        if (this.currentSceneName !== 'gameplay') return;
+
+        this.autoPausedByVisibility = !!auto;
+        this.setScene('pause', { auto });
+    }
+
+    resumeGameplay() {
+        if (!this.gamePlayScene) return;
+
+        this.autoPausedByVisibility = false;
+        this.setScene('gameplay');
+    }
+
+    handleVisibilityChange(hidden) {
+        if (hidden) {
+            if (this.currentSceneName === 'gameplay') {
+                this.pauseGameplay(true);
+            }
+            return;
+        }
+
+        if (this.autoPausedByVisibility && this.currentSceneName === 'pause') {
+            // stay paused intentionally; user must press resume
+            this.autoPausedByVisibility = false;
+        }
+    }
+
     setScene(name, payload = null) {
         if (name === 'menu') {
             this._destroyCurrent();
 
             if (this.gamePlayScene) {
-                this.gamePlayScene.destroy();
+                this.gamePlayScene.destroy?.();
                 this.gamePlayScene = null;
             }
 
@@ -110,7 +150,7 @@ export default class SceneManager {
 
         if (name === 'gameplay') {
             if (this.currentSceneName === 'pause') {
-                this.currentScene.destroy();
+                this.currentScene.destroy?.();
             } else {
                 this._destroyCurrent();
             }
@@ -132,7 +172,7 @@ export default class SceneManager {
                 this._destroyCurrent();
             }
 
-            this.currentScene = new GamePauseScene(this);
+            this.currentScene = new GamePauseScene(this, payload || {});
             this.currentSceneName = 'pause';
             this.ensureMusic();
             this.currentScene.resize?.(this.width, this.height);
@@ -156,11 +196,12 @@ export default class SceneManager {
         this.currentLevel = Math.max(1, Number(levelNumber || 1));
 
         if (this.gamePlayScene) {
-            this.gamePlayScene.destroy();
+            this.gamePlayScene.destroy?.();
             this.gamePlayScene = null;
         }
 
         this.lastWinData = null;
+        this.autoPausedByVisibility = false;
         this.setScene('gameplay');
     }
 
@@ -168,10 +209,11 @@ export default class SceneManager {
         this.lastWinData = payload || null;
 
         if (this.gamePlayScene) {
-            this.gamePlayScene.destroy();
+            this.gamePlayScene.destroy?.();
             this.gamePlayScene = null;
         }
 
+        this.autoPausedByVisibility = false;
         this.setScene('win', payload);
     }
 

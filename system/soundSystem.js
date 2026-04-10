@@ -3,6 +3,7 @@ import { readSettings, writeSettings } from '../system/progress.js';
 let initialized = false;
 let unlocked = false;
 let settingsCache = null;
+let pausedByVisibility = false;
 
 function getSettings() {
     if (!settingsCache) settingsCache = readSettings();
@@ -31,6 +32,40 @@ function syncMutedStateToDom() {
     return muted;
 }
 
+function pauseAllAudio() {
+    for (const audio of getAllAudio()) {
+        try {
+            audio.pause();
+        } catch {}
+    }
+}
+
+function resumeMusicAfterVisibility() {
+    const music = getAudio('snd_soundtrack');
+    if (!music || isAudioMuted() || !unlocked) return;
+
+    music.loop = true;
+    if (!Number.isFinite(music.volume) || music.volume <= 0) {
+        music.volume = 0.35;
+    }
+    music.play().catch(() => {});
+}
+
+function handleVisibilityAudioChange() {
+    const hidden = document.hidden;
+
+    if (hidden) {
+        pausedByVisibility = true;
+        pauseAllAudio();
+        return;
+    }
+
+    if (pausedByVisibility) {
+        pausedByVisibility = false;
+        resumeMusicAfterVisibility();
+    }
+}
+
 export function initSoundSystem() {
     if (initialized) {
         syncMutedStateToDom();
@@ -43,6 +78,9 @@ export function initSoundSystem() {
     window.addEventListener('pointerdown', unlockAudio, { passive: true });
     window.addEventListener('touchstart', unlockAudio, { passive: true });
     window.addEventListener('keydown', unlockAudio);
+
+    document.addEventListener('visibilitychange', handleVisibilityAudioChange);
+    window.addEventListener('blur', pauseAllAudio);
 }
 
 export function unlockAudio() {
@@ -53,7 +91,7 @@ export function unlockAudio() {
     syncMutedStateToDom();
 
     const music = getAudio('snd_soundtrack');
-    if (music && !isAudioMuted()) {
+    if (music && !isAudioMuted() && !document.hidden) {
         music.loop = true;
         if (!Number.isFinite(music.volume) || music.volume <= 0) {
             music.volume = 0.35;
@@ -81,7 +119,7 @@ export function setAudioMuted(muted) {
         music.loop = true;
         music.muted = isMuted;
 
-        if (isMuted) {
+        if (isMuted || document.hidden) {
             music.pause();
         } else if (unlocked) {
             music.play().catch(() => {});
@@ -111,7 +149,7 @@ export function playMusic(volume = 0.35) {
     music.volume = Math.max(0, Math.min(1, Number(volume) || 0.35));
     music.muted = isAudioMuted();
 
-    if (music.muted || !unlocked) return;
+    if (document.hidden || music.muted || !unlocked) return;
     music.play().catch(() => {});
 }
 
@@ -122,7 +160,7 @@ export function pauseMusic() {
 
 export function playSfx(id, volume = 1, restart = true) {
     const audio = getAudio(id);
-    if (!audio || isAudioMuted()) return;
+    if (!audio || isAudioMuted() || document.hidden) return;
 
     if (!unlocked) unlockAudio();
 

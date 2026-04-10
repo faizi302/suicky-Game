@@ -94,6 +94,23 @@ initSoundSystem();
 sceneManager = new SceneManager(canvas, ctx, VIRT_W, VIRT_H);
 sceneManager.resize(VIRT_W, VIRT_H);
 
+function handleAppVisibilityChange() {
+    if (!sceneManager) return;
+    sceneManager.handleVisibilityChange(document.hidden);
+}
+
+document.addEventListener('visibilitychange', handleAppVisibilityChange);
+
+window.addEventListener('blur', () => {
+    if (!sceneManager) return;
+    sceneManager.handleVisibilityChange(true);
+});
+
+window.addEventListener('focus', () => {
+    if (!sceneManager) return;
+    sceneManager.handleVisibilityChange(document.hidden);
+});
+
 let lastTime = 0;
 let accumulator = 0;
 const FIXED_STEP = 1000 / 60;
@@ -129,4 +146,3 @@ function loop(timestamp) {
 }
 
 requestAnimationFrame(loop);
-
