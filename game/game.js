@@ -29,12 +29,12 @@ function computeZoom(canvasW, canvasH, tileSize, targetRows) {
     return Math.max(1.2, Math.min(zoomByH, 3.0));
 }
 
-const CAMERA_TARGET_ROWS = 12;
+const CAMERA_TARGET_ROWS = 9;
 
 // How many rows from the TOP of the viewport trigger upward camera scroll.
 // 9 total rows visible. We want 6 bottom rows always visible, so camera only
 // moves when the player reaches the top 3 rows (row index 0, 1, 2).
-const CAMERA_TOP_UNLOCK_ROW = 3;
+const CAMERA_TOP_UNLOCK_ROW = 1;
 
 export default class Game {
     constructor(canvas, ctx, width, height, sceneManager) {
