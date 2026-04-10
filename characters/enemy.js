@@ -210,7 +210,8 @@ export default class Enemy {
         this.fadeDuration = 220;
         this.removeMe = false;
 
-        this.renderHeight = Math.round(this.tileSize * 0.95);
+        this.renderHeight = Math.round(this.tileSize * 1.20);
+        this.renderDead = Math.round(this.tileSize * 0.95);
 
         this.anims = {
             run: new SpriteAnim('enemyRunning', 16, 70, true),
@@ -342,9 +343,10 @@ export default class Enemy {
 
         const frame = anim.frameRects[anim.currentFrame] || anim.frameRects[0];
         const aspect = frame.w / frame.h;
-        const drawHeight = this.renderHeight;
+        const drawHeight = this.currentAnim === 'dead'
+            ? this.renderDead
+            : this.renderHeight;
         const drawWidth = Math.round(drawHeight * aspect);
-
         // stand on surface properly
         const drawX = Math.floor(bodyX + (this.width - drawWidth) * 0.5);
         const drawY = Math.floor(bodyY + this.height - drawHeight);

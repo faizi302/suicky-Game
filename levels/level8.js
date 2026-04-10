@@ -384,7 +384,7 @@ export function createLevel8Map() {
     addCoins(coins, 430, 431, 7);
     addCoins(coins, 433, 434, 5);
 
-    addLadder(ladders, 436, 12, 5);
+    addLadder(ladders, 442, 12, 5);
     platform(grid, 439, 5, 16);
     addCoins(coins, 440, 454, 5);
     addKey(keys, 453, 5);
@@ -402,6 +402,8 @@ export function createLevel8Map() {
     addKnife(knives, 460, groundRow);
 
     carveGap(grid, 463, 5, groundRow);
+      platform(grid, 464, 11, 3); addCoin(coins,465,467,11);
+
 
     blockStack(grid, 470, 12, 2, 1);
     blockStack(grid, 472, 11, 2, 2);

@@ -6,6 +6,11 @@
  * - horizontal platforms keep Y locked
  * - cement platforms use exact frames 6,7,8 from blocks.png
  * - tiles draw with a tiny overlap and source trim to remove seams
+ *
+ * Camera Y update:
+ * - Bottom is hard-locked (camera never scrolls below ground position).
+ * - Top is unlocked: camera smoothly follows the player upward when they
+ *   reach the top 7 rows of the visible viewport.
  */
 
 import Player, { playSound } from '../characters/player.js';
@@ -24,7 +29,12 @@ function computeZoom(canvasW, canvasH, tileSize, targetRows) {
     return Math.max(1.2, Math.min(zoomByH, 3.0));
 }
 
-const CAMERA_TARGET_ROWS = 12.5;
+const CAMERA_TARGET_ROWS = 12;
+
+// How many rows from the TOP of the viewport trigger upward camera scroll.
+// 9 total rows visible. We want 6 bottom rows always visible, so camera only
+// moves when the player reaches the top 3 rows (row index 0, 1, 2).
+const CAMERA_TOP_UNLOCK_ROW = 3;
 
 export default class Game {
     constructor(canvas, ctx, width, height, sceneManager) {
@@ -76,68 +86,76 @@ export default class Game {
         this.reset();
     }
 
-    reset() {
-        const level = getLevelData(this.currentLevelId);
+reset() {
+    const level = getLevelData(this.currentLevelId);
 
-        this.map = level.grid;
-        this.levelData = level;
-        this.mapRows = this.map.length;
-        this.mapCols = this.map[0].length;
-        this.worldWidth = this.mapCols * this.tileSize;
-        this.worldHeight = this.mapRows * this.tileSize;
+    this.map = level.grid;
+    this.levelData = level;
+    this.mapRows = this.map.length;
+    this.mapCols = this.map[0].length;
+    this.worldWidth = this.mapCols * this.tileSize;
+    this.worldHeight = this.mapRows * this.tileSize;
 
-        if (this.ui && typeof this.ui.destroy === 'function') {
-            this.ui.destroy();
-        }
-
-        this.ui = new UI(this.canvas, this.sceneManager);
-        this.player = new Player(this);
-
-        const autoZoom = computeZoom(this.width, this.height, this.tileSize, CAMERA_TARGET_ROWS);
-
-        this.camera = createCamera(this.width, this.height, {
-            zoom: autoZoom,
-            minZoom: autoZoom,
-            maxZoom: autoZoom,
-            followOffsetX: 0.36,
-            deadZoneW: 110,
-            followStrengthX: 0.18,
-            lockY: true,
-            groundPadding: 80
-        });
-
-        this.enemies = (level.enemies || []).map(enemy =>
-            new Enemy(this, enemy.x, enemy.y, enemy.patrolLeft, enemy.patrolRight, enemy.type)
-        );
-
-        this.movingPlatforms = (level.movingPlatforms || []).map(p => ({
-            ...p,
-            _dir: 1,
-            _baseX: p.x,
-            _baseY: p.y
-        }));
-
-        this.items = [
-            ...(level.coins || []).map(coin => new Coin(coin.x, coin.y, 'coin')),
-            ...(level.keys || []).map(key => new Coin(key.x, key.y, 'key')),
-            ...(level.knives || []).map(knife => new Coin(knife.x, knife.y, 'knife'))
-        ];
-
-        this.ui.totalCoins = (level.coins || []).length;
-        this.ui.keys = 0;
-        this.ui.totalKeys = (level.keys || []).length;
-        this.targetKeys = (level.keys || []).length;
-
-        this.dead = false;
-        this._deathPending = false;
-        this.missionComplete = false;
-        this.winSceneOpened = false;
-        this.doorOpened = false;
-        this._doorSoundPlayed = false;
-        this._doorLockedHintTimer = 0;
-        this.climbGuideLadder = null;
-        this.doorGuideVisible = false;
+    if (this.ui && typeof this.ui.destroy === 'function') {
+        this.ui.destroy();
     }
+
+    this.ui = new UI(this.canvas, this.sceneManager);
+
+    // FIX: use timer from current level
+    this.ui.timerMax = Number(level.timerMs || 180000);
+    this.ui.timer = Number(level.timerMs || 180000);
+
+    this.player = new Player(this);
+
+    const autoZoom = computeZoom(this.width, this.height, this.tileSize, CAMERA_TARGET_ROWS);
+
+    this.camera = createCamera(this.width, this.height, {
+        zoom:             autoZoom,
+        minZoom:          autoZoom,
+        maxZoom:          autoZoom,
+        followOffsetX:    0.17,
+        deadZoneW:        110,
+        followStrengthX:  0.18,
+        followStrengthY:  0.18,   // same silky strength for vertical
+        lockY:            false,  // bottom-locked but top is free
+        groundPadding:    80,
+        topUnlockRow:     CAMERA_TOP_UNLOCK_ROW,
+        tileSize:         this.tileSize,
+    });
+
+    this.enemies = (level.enemies || []).map(enemy =>
+        new Enemy(this, enemy.x, enemy.y, enemy.patrolLeft, enemy.patrolRight, enemy.type)
+    );
+
+    this.movingPlatforms = (level.movingPlatforms || []).map(p => ({
+        ...p,
+        _dir: 1,
+        _baseX: p.x,
+        _baseY: p.y
+    }));
+
+    this.items = [
+        ...(level.coins || []).map(coin => new Coin(coin.x, coin.y, 'coin')),
+        ...(level.keys || []).map(key => new Coin(key.x, key.y, 'key')),
+        ...(level.knives || []).map(knife => new Coin(knife.x, knife.y, 'knife'))
+    ];
+
+    this.ui.totalCoins = (level.coins || []).length;
+    this.ui.keys = 0;
+    this.ui.totalKeys = (level.keys || []).length;
+    this.targetKeys = (level.keys || []).length;
+
+    this.dead = false;
+    this._deathPending = false;
+    this.missionComplete = false;
+    this.winSceneOpened = false;
+    this.doorOpened = false;
+    this._doorSoundPlayed = false;
+    this._doorLockedHintTimer = 0;
+    this.climbGuideLadder = null;
+    this.doorGuideVisible = false;
+}
 
     initInput() {
         if (this.keysBound) return;
@@ -519,92 +537,95 @@ export default class Game {
             const onPlatform =
                 player.alive &&
                 !player.isClimbing &&
-                player.x + player.width > p.x &&
-                player.x < p.x + p.width &&
-                Math.abs((player.y + player.height) - prevY) < 8;
+                (
+                    player.currentPlatform === p ||
+                    (
+                        player.x + player.width > p.x + 2 &&
+                        player.x < p.x + p.width - 2 &&
+                        Math.abs((player.y + player.height) - prevY) < 10
+                    )
+                );
 
             if (onPlatform) {
                 player.x += dx;
                 player.y += dy;
+                player.currentPlatform = p;
+                player.onGround = true;
             }
         }
     }
 
-getMovingPlatformFrames(p, numTiles) {
-    // Highest priority: exact frames passed from level data
-    if (Array.isArray(p.frameIndices) && p.frameIndices.length) {
-        if (numTiles <= 1) {
-            return [p.frameIndices[1] ?? p.frameIndices[0]];
-        }
-        if (numTiles === 2) {
+    getMovingPlatformFrames(p, numTiles) {
+        if (Array.isArray(p.frameIndices) && p.frameIndices.length) {
+            if (numTiles <= 1) {
+                return [p.frameIndices[1] ?? p.frameIndices[0]];
+            }
+            if (numTiles === 2) {
+                return [
+                    p.frameIndices[0],
+                    p.frameIndices[2] ?? p.frameIndices[1] ?? p.frameIndices[0]
+                ];
+            }
             return [
                 p.frameIndices[0],
+                ...Array(Math.max(0, numTiles - 2)).fill(
+                    p.frameIndices[1] ?? p.frameIndices[0]
+                ),
                 p.frameIndices[2] ?? p.frameIndices[1] ?? p.frameIndices[0]
             ];
         }
-        return [
-            p.frameIndices[0],
-            ...Array(Math.max(0, numTiles - 2)).fill(
-                p.frameIndices[1] ?? p.frameIndices[0]
-            ),
-            p.frameIndices[2] ?? p.frameIndices[1] ?? p.frameIndices[0]
-        ];
+
+        const isCement = p.tileType === 6 || p.tileType === 7 || p.tileType === 8;
+
+        if (isCement) {
+            if (numTiles <= 1) return [7];
+            if (numTiles === 2) return [6, 8];
+            return [6, ...Array(Math.max(0, numTiles - 2)).fill(7), 8];
+        }
+
+        if (numTiles <= 1) return [1];
+        if (numTiles === 2) return [0, 2];
+        return [0, ...Array(Math.max(0, numTiles - 2)).fill(1), 2];
     }
 
-    // Old cement fallback
-    const isCement = p.tileType === 6 || p.tileType === 7 || p.tileType === 8;
+    drawMovingPlatforms(ctx) {
+        if (!this.movingPlatforms || !this.movingPlatforms.length) return;
 
-    if (isCement) {
-        if (numTiles <= 1) return [7];
-        if (numTiles === 2) return [6, 8];
-        return [6, ...Array(Math.max(0, numTiles - 2)).fill(7), 8];
-    }
+        const img = document.getElementById('img_blocks')
+            || document.getElementById('blocks')
+            || document.getElementById('img_tiles')
+            || document.getElementById('tiles');
 
-    // Default wood fallback
-    if (numTiles <= 1) return [1];
-    if (numTiles === 2) return [0, 2];
-    return [0, ...Array(Math.max(0, numTiles - 2)).fill(1), 2];
-}
+        if (!img || !img.complete || img.naturalWidth === 0) return;
 
-drawMovingPlatforms(ctx) {
-    if (!this.movingPlatforms || !this.movingPlatforms.length) return;
+        const FRAME_COUNT = 15;
+        const frameW = img.naturalWidth / FRAME_COUNT;
+        const frameH = img.naturalHeight;
 
-    const img = document.getElementById('img_blocks')
-        || document.getElementById('blocks')
-        || document.getElementById('img_tiles')
-        || document.getElementById('tiles');
+        for (const p of this.movingPlatforms) {
+            const screenX = Math.round(p.x - this.camera.x);
+            const screenY = Math.round(p.y - this.camera.y);
 
-    if (!img || !img.complete || img.naturalWidth === 0) return;
+            if (screenX + p.width < 0 || screenX > this.camera.viewW) continue;
+            if (screenY + p.height < 0 || screenY > this.camera.viewH) continue;
 
-    // NEW blocks.png = 1800 x 120 with 15 frames in 1 row
-    const FRAME_COUNT = 15;
-    const frameW = img.naturalWidth / FRAME_COUNT;   // 120
-    const frameH = img.naturalHeight;                // 120
+            const numTiles = Math.max(1, Math.round(p.width / this.tileSize));
+            const frames = this.getMovingPlatformFrames(p, numTiles);
 
-    for (const p of this.movingPlatforms) {
-        const screenX = Math.round(p.x - this.camera.x);
-        const screenY = Math.round(p.y - this.camera.y);
+            for (let i = 0; i < numTiles; i++) {
+                const frameIdx = frames[Math.min(i, frames.length - 1)];
 
-        if (screenX + p.width < 0 || screenX > this.camera.viewW) continue;
-        if (screenY + p.height < 0 || screenY > this.camera.viewH) continue;
+                const dx = Math.round(screenX + i * this.tileSize);
+                const dy = Math.round(screenY);
+                const dw = this.tileSize;
+                const dh = this.tileSize;
 
-        const numTiles = Math.max(1, Math.round(p.width / this.tileSize));
-        const frames = this.getMovingPlatformFrames(p, numTiles);
-
-        for (let i = 0; i < numTiles; i++) {
-            const frameIdx = frames[Math.min(i, frames.length - 1)];
-
-            const dx = Math.round(screenX + i * this.tileSize);
-            const dy = Math.round(screenY);
-            const dw = this.tileSize;
-            const dh = this.tileSize;
-
-            ctx.drawImage(
-                img,
-                frameIdx * frameW, 0, frameW, frameH,
-                dx, dy, dw, dh
-            );
+                ctx.drawImage(
+                    img,
+                    frameIdx * frameW, 0, frameW, frameH,
+                    dx, dy, dw, dh
+                );
+            }
         }
     }
-}
 }

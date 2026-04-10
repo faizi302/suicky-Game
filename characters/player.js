@@ -11,12 +11,13 @@ const DC_FRAME_H = 185;
 const DC_ROW_DIE = 0;
 const DC_ROW_CLIMB = 1;
 
-const DRAW_W = 84;
-const DRAW_H = 84;
+const DRAW_W = 95;
+const DRAW_H = 100;
 
 const RUN_FRAME_MS = 92;
 const CLIMB_FRAME_MS = 95;
 const DIE_FRAME_MS = 90;
+const TEST_MODE_NO_DEATH = false;
 
 const soundLastTime = new Map();
 
@@ -34,8 +35,8 @@ export default class Player {
         this.game = game;
         this.tileSize = game.tileSize;
 
-        this.width = 26;
-        this.height = 24;
+        this.width = 30;
+        this.height = 35;
 
         this.x = 3 * this.tileSize;
         this.y = 10 * this.tileSize - this.height;
@@ -46,7 +47,7 @@ export default class Player {
         this.speed = 0.48;
         this.maxSpeed = 3.3;
         this.friction = 0.84;
-        this.jumpForce = -15;
+        this.jumpForce = -13;
         this.climbSpeed = 2.2;
 
         this.alive = true;
@@ -77,30 +78,39 @@ export default class Player {
         this.deadDone = false;
 
         this._moveIntent = false;
+
+        // moving platform support
+        this.currentPlatform = null;
     }
 
-    die() {
-        if (!this.alive) return;
-
-        this.alive = false;
-        this.vx = 0;
-        this.vy = -7.2;
-
-        this.anim = 'dead';
-        this.deadFrame = 0;
-        this.deadTimer = 0;
-        this.deadDone = false;
-
-        if (document.getElementById('snd_die')) {
-            playSound('snd_die', 0.9, 0, true);
-        } else {
-            playSound('snd_player_death', 0.9, 0, true);
-        }
+die() {
+    if (TEST_MODE_NO_DEATH) {
+        return;
     }
+
+    if (!this.alive) return;
+
+    this.alive = false;
+    this.vx = 0;
+    this.vy = -7.2;
+    this.currentPlatform = null;
+
+    this.anim = 'dead';
+    this.deadFrame = 0;
+    this.deadTimer = 0;
+    this.deadDone = false;
+
+    if (document.getElementById('snd_die')) {
+        playSound('snd_die', 0.9, 0, true);
+    } else {
+        playSound('snd_player_death', 0.9, 0, true);
+    }
+}
 
     bounceAfterEnemyKill() {
         this.vy = -8.2;
         this.onGround = false;
+        this.currentPlatform = null;
         this.anim = 'jump';
         playSound('snd_bounce', 0.72, 70, true);
     }
@@ -108,6 +118,7 @@ export default class Player {
     startClimbing(ladder) {
         this.currentLadder = ladder;
         this.isClimbing = true;
+        this.currentPlatform = null;
         this.vx = 0;
         this.vy = 0;
         this.anim = 'climb';
@@ -145,7 +156,7 @@ export default class Player {
         playSound('snd_lock_tremble', 0.55, 220, true);
     }
 
-    update(keys, dt, map) {
+    update(keys, dt, map, movingPlatforms = []) {
         if (!this.alive) {
             this._updateDeath(dt);
             return;
@@ -155,7 +166,7 @@ export default class Player {
         const right = keys['ArrowRight'] || keys['d'] || keys['D'];
         const wantsUp = keys['ArrowUp'] || keys['w'] || keys['W'];
         const wantsDown = keys['ArrowDown'] || keys['s'] || keys['S'];
-        const wantsJump = keys[' '] ;
+        const wantsJump = keys[' '];
 
         this._moveIntent = !!(left || right);
 
@@ -199,13 +210,19 @@ export default class Player {
         if (this.jumpBuffer > 0 && this.coyoteTime > 0) {
             this.vy = this.jumpForce;
             this.onGround = false;
+            this.currentPlatform = null;
             this.jumpBuffer = 0;
             this.coyoteTime = 0;
             playSound('snd_jump', 0.65, 80, true);
         }
 
+        const prevY = this.y;
+        const prevBottom = prevY + this.height;
+        const prevTop = prevY;
+
         applyGravity(this);
         resolveMapCollision(this, map, this.tileSize);
+        this.resolveMovingPlatformCollision(movingPlatforms, prevTop, prevBottom);
 
         if (this.x < this.tileSize) {
             this.x = this.tileSize;
@@ -228,6 +245,65 @@ export default class Player {
         }
     }
 
+    resolveMovingPlatformCollision(platforms = [], prevTop, prevBottom) {
+        if (!platforms.length || !this.alive || this.isClimbing) {
+            this.currentPlatform = null;
+            return;
+        }
+
+        let landed = false;
+        const currTop = this.y;
+        const currBottom = this.y + this.height;
+
+        for (const p of platforms) {
+            const px = p.x;
+            const py = p.y;
+            const pw = p.width;
+            const ph = p.height;
+
+            const overlapX =
+                this.x + this.width > px + 2 &&
+                this.x < px + pw - 2;
+
+            if (!overlapX) continue;
+
+            // landing on top of platform while falling
+            const wasAbove = prevBottom <= py + 6;
+            const crossedTop = currBottom >= py && currBottom <= py + ph + 14;
+
+            if (this.vy >= 0 && wasAbove && crossedTop) {
+                this.y = py - this.height;
+                this.vy = 0;
+                this.onGround = true;
+                this.currentPlatform = p;
+                landed = true;
+                continue;
+            }
+
+            // hit platform from below while jumping upward
+            const wasBelow = prevTop >= py + ph - 4;
+            const crossedBottom = currTop <= py + ph && currTop >= py - 14;
+
+            if (this.vy < 0 && wasBelow && crossedBottom) {
+                this.y = py + ph;
+                this.vy = 0;
+                continue;
+            }
+        }
+
+        if (!landed) {
+            const stillOnCurrent =
+                this.currentPlatform &&
+                this.x + this.width > this.currentPlatform.x + 2 &&
+                this.x < this.currentPlatform.x + this.currentPlatform.width - 2 &&
+                Math.abs((this.y + this.height) - this.currentPlatform.y) <= 10;
+
+            if (!stillOnCurrent) {
+                this.currentPlatform = null;
+            }
+        }
+    }
+
     _handleClimb(keys) {
         if (!this.currentLadder) {
             this.stopClimbing();
@@ -241,7 +317,7 @@ export default class Player {
         const right = keys['ArrowRight'] || keys['d'] || keys['D'];
 
         const ladderCenter = ladder.x + ladder.width * 0.5;
-        this.x = ladderCenter - this.width * 0.5;
+        this.x = ladderCenter - this.width * 0.5-7;
 
         this.vx = 0;
         this.vy = 0;

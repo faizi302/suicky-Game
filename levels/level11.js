@@ -126,10 +126,10 @@ export function createLevel11Map() {
     addCoins(coins, 21, 34, 11);
 
     platform(grid, 5, 9, 10);
-    addCoins(coins, 6, 15, 9);
+    addCoins(coins, 6, 10, 9);
 
-    platform(grid, 6, 6, 10);
-    addCoins(coins, 6, 15, 6);
+    platform(grid, 6, 6, 6);
+    addCoins(coins, 6, 8, 6);
     addEnemy(enemies, 10, 6, 6, 15, 0);
 
     platform(grid, 21, 5, 14);
@@ -188,11 +188,11 @@ export function createLevel11Map() {
     addCoins(coins, 79, 82, 9);
 
     addLadder(ladders, 79, 8, 6);
-    mp(movingPlatforms, 76, 12, 2.0, 7, 11, [10, 9, 11]);
+    mp(movingPlatforms, 76, 12, 2.0, 8, 11, [10, 9, 11]);
 
-    platform(grid, 92, 5, 6);
-    addCoins(coins, 92, 97, 5);
-    addEnemy(enemies, 95, 5, 92, 97, 1);
+    platform(grid, 94, 6, 6);
+    addCoins(coins, 94, 97, 6);
+    addEnemy(enemies, 94, 6, 98, 97, 1);
 
     platform(grid, 100, 4, 6);
     addCoins(coins, 100, 105, 4);
@@ -251,7 +251,7 @@ export function createLevel11Map() {
     addEnemy(enemies, 151, 5, 150, 154, 1);
     addEnemy(enemies, 183, 5, 182, 186, 0);
 
-    addLadder(ladders, 183, 12, 4);
+    addLadder(ladders, 183, 12, 5);
 
     addKnife(knives, 145, 13);
     addKnife(knives, 162, 13);
@@ -315,27 +315,25 @@ export function createLevel11Map() {
         if (y !== 5 && y !== 6) setTile(grid, 265, y, 2);
     }
 
-    platform(grid, 230, 4, 16);
-    platform(grid, 250, 4, 16);
+    platform(grid, 230, 4, 14);
+    platform(grid, 250, 4, 14);
 
     platform(grid, 231, 12, 6);
     addCoins(coins, 231, 236, 12);
     addEnemy(enemies, 234, 12, 231, 237, 0);
 
-    platform(grid, 238, 9, 7);
-    addCoins(coins, 238, 244, 9);
+  
 
-    platform(grid, 231, 7, 7);
-    addCoins(coins, 231, 237, 7);
-    addEnemy(enemies, 234, 7, 231, 237, 1);
+    platform(grid, 230, 9, 7);
+    addCoins(coins, 231, 237, 9);
+    addEnemy(enemies, 234, 9, 231, 237, 1);
 
-    platform(grid, 238, 6, 7);
-    addCoins(coins, 238, 244, 6);
-    addKey(keys, 244, 6);
+    platform(grid, 238, 7, 7);
+    addCoins(coins, 238, 244, 7);
+    addKey(keys, 244, 7);
 
-    addLadder(ladders, 232, 11, 7);
-    addLadder(ladders, 239, 8, 6);
-    addLadder(ladders, 233, 6, 4);
+    addLadder(ladders, 232, 11, 9);
+    addLadder(ladders, 233, 8, 4);
 
     platform(grid, 251, 12, 7);
     addCoins(coins, 251, 257, 12);
@@ -343,22 +341,22 @@ export function createLevel11Map() {
 
     platform(grid, 258, 9, 7);
     addCoins(coins, 258, 264, 9);
+     addKey(keys, 260, 9);
 
     platform(grid, 251, 7, 7);
     addCoins(coins, 251, 257, 7);
     addEnemy(enemies, 254, 7, 251, 257, 1);
 
-    platform(grid, 258, 6, 7);
-    addCoins(coins, 258, 264, 6);
-    addKey(keys, 264, 6);
+ 
+   
 
-    addLadder(ladders, 252, 11, 6);
-    addLadder(ladders, 259, 8, 5);
+    addLadder(ladders, 252, 11, 7);
     addLadder(ladders, 253, 6, 4);
 
-    platform(grid, 246, 4, 4);
-    addCoins(coins, 246, 249, 5);
 
+
+    addKnife(knives, 247, groundRow);
+    addKnife(knives, 247.5, groundRow);
     addKnife(knives, 267, groundRow);
     addKnife(knives, 268, groundRow);
     carveGap(grid, 270, 10, groundRow);
@@ -414,32 +412,34 @@ export function createLevel11Map() {
     addCoins(coins, 333, 341, 10);
     addEnemy(enemies, 337, 10, 333, 341, 0);
 
-    addLadder(ladders, 274, 12, 7);
-    addLadder(ladders, 282, 7, 4);
-    addLadder(ladders, 294, 12, 7);
-    addLadder(ladders, 302, 7, 4);
-    addLadder(ladders, 314, 12, 7);
-    addLadder(ladders, 322, 7, 4);
-    addLadder(ladders, 334, 12, 7);
-    addLadder(ladders, 342, 7, 4);
+    addLadder(ladders, 274, 9, 4);
+    addLadder(ladders, 282, 6, 4);
+    addLadder(ladders, 294, 12, 10);
+    addLadder(ladders, 302, 6, 4);
+    addLadder(ladders, 314, 12, 10);
+    addLadder(ladders, 322, 6, 4);
+    addLadder(ladders, 334, 12, 10);
+    addLadder(ladders, 342, 6, 4);
 
-    mp(movingPlatforms, 284, 10, 2.0, 7, 11, [9, 10, 11]);
-    mp(movingPlatforms, 289, 7, 2.5, 4, 9, [10, 11, 9]);
-    mp(movingPlatforms, 304, 10, 2.0, 7, 11, [11, 9, 10]);
-    mp(movingPlatforms, 309, 7, 2.5, 4, 9, [9, 10, 11]);
-    mp(movingPlatforms, 324, 10, 2.0, 7, 11, [10, 9, 11]);
-    mp(movingPlatforms, 329, 7, 2.5, 4, 9, [11, 10, 9]);
+    mp(movingPlatforms, 284, 10, 2.0, 9, 11, [9, 10, 11]);
+    mp(movingPlatforms, 290, 7, 2.5, 4, 9, [10, 11, 9]);
+    mp(movingPlatforms, 304, 10, 2.0, 9, 11, [11, 9, 10]);
+    mp(movingPlatforms, 310, 7, 2.5, 4, 9, [9, 10, 11]);
+    mp(movingPlatforms, 324, 10, 2.0, 9, 11, [10, 9, 11]);
+    mp(movingPlatforms, 330, 7, 2.5, 4, 9, [11, 10, 9]);
 
-    addKnife(knives, 276, 10);
-    addKnife(knives, 282, 7);
-    addKnife(knives, 296, 4);
-    addKnife(knives, 306, 10);
-    addKnife(knives, 316, 7);
-    addKnife(knives, 326, 4);
+    addKnife(knives, 284, 13);
+    addKnife(knives, 292, 4);
+    addKnife(knives, 306, 13);
+    addKnife(knives, 316, 10);
+    addKnife(knives, 326, 13);
 
     addKnife(knives, 355, groundRow);
     addKnife(knives, 356, groundRow);
     carveGap(grid, 358, 8, groundRow);
+
+     mp(movingPlatforms, 359, 11, 2.0, 9, 11, [10, 9, 11]);
+    mp(movingPlatforms, 362, 9, 2.5, 6, 9, [11, 10, 9]);
 
     // ══════════════════════════════════════════════════
     // SECTION 7 — Shortened final ending (cols 366–399)
@@ -459,6 +459,8 @@ export function createLevel11Map() {
     addKnife(knives, 382, groundRow);
 
     carveGap(grid, 384, 4, groundRow);
+
+     mp(movingPlatforms, 385, 10, 2.0, 9, 11, [10, 9, 11]);
 
     blockStack(grid, 388, 12, 2, 1);
     blockStack(grid, 390, 11, 2, 2);
