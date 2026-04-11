@@ -65,7 +65,19 @@ export default class GamePauseScene {
         };
     }
 
+    // Returns true when the gameplay UI's settings dropdown (or any of its
+    // overlay panels) is currently open.  While it is open the pause scene
+    // must NOT intercept any pointer events so that the dropdown buttons
+    // remain fully interactive.
+    _uiIsConsumingInput() {
+        const ui = this.sceneManager?.gamePlayScene?.game?.ui;
+        return ui ? ui.isConsumingInput() : false;
+    }
+
     _onKeyDown(e) {
+        // If the dropdown / help / exit panel is open let the UI handle keys
+        if (this._uiIsConsumingInput()) return;
+
         if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
             this.sceneManager.setScene('gameplay');
             e.preventDefault();
@@ -73,6 +85,13 @@ export default class GamePauseScene {
     }
 
     _onMouseMove(e) {
+        // Don't update hover state while UI is consuming input — keeps
+        // pause buttons visually unhovered when the dropdown covers them.
+        if (this._uiIsConsumingInput()) {
+            this.hoveredBtn = null;
+            return;
+        }
+
         const { x, y } = this._getPos(e);
         this.hoveredBtn = null;
         for (const b of this.buttons) {
@@ -90,11 +109,19 @@ export default class GamePauseScene {
     _onTouchEnd(e) {
         this._lastTouchAt = performance.now();
         e.preventDefault();
+
+        // Let the UI dropdown handle this touch if it is open
+        if (this._uiIsConsumingInput()) return;
+
         this._handlePress(this._getPos(e));
     }
 
     _onClick(e) {
         if (performance.now() - this._lastTouchAt < 450) return;
+
+        // Let the UI dropdown handle this click if it is open
+        if (this._uiIsConsumingInput()) return;
+
         this._handlePress(this._getPos(e));
     }
 
@@ -132,6 +159,7 @@ export default class GamePauseScene {
         const W = this.W;
         const H = this.H;
 
+        // ── Semi-transparent backdrop (always drawn first) ───────────────────
         ctx.fillStyle = 'rgba(0,0,0,0.62)';
         ctx.fillRect(0, 0, W, H);
 
@@ -165,8 +193,25 @@ export default class GamePauseScene {
         ctx.fillText('Press ESC or P to resume', W / 2, py + ph * 0.30);
         ctx.restore();
 
+        // ── Pause buttons — draw at reduced opacity when the UI dropdown is
+        //    open so the player can tell these are temporarily inactive. ───────
+        const uiConsuming = this._uiIsConsumingInput();
+        ctx.save();
+        if (uiConsuming) ctx.globalAlpha = 0.35;
         for (const b of this.buttons) {
-            this._drawBtn(ctx, b, this.hoveredBtn === b.id);
+            this._drawBtn(ctx, b, !uiConsuming && this.hoveredBtn === b.id);
+        }
+        ctx.restore();
+
+        // ── Hint text when dropdown is active ────────────────────────────────
+        if (uiConsuming) {
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'rgba(255,220,100,0.90)';
+            ctx.font = `bold ${Math.round(Math.min(15, pw * 0.045))}px Arial`;
+            ctx.fillText('Close the settings menu to use pause controls', W / 2, py + ph * 0.92);
+            ctx.restore();
         }
     }
 

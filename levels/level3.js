@@ -123,6 +123,13 @@ export function createLevel3Map() {
     addKnife(knives, 41, groundRow);
     carveGap(grid, 43, 5, groundRow);
 
+        platform(grid, 45, 11, 3);
+    addCoins(coins, 45, 48, 11);
+
+        platform(grid, 38, 8, 8);
+    addCoins(coins, 39,45 , 8);
+    addKey(keys,46,8);
+
     blockStack(grid, 48, 12, 1, 2);
     platform(grid, 50, 9, 8);
     addCoins(coins, 51, 57, 9);
@@ -147,8 +154,8 @@ export function createLevel3Map() {
     addCoins(coins, 82, 85, 8);
 
     addKnife(knives, 88, groundRow);
+    addKnife(knives, 88.5, groundRow);
     addKnife(knives, 89, groundRow);
-    addKnife(knives, 90, groundRow);
 
     blockStack(grid, 93, 11, 1, 3);
     blockStack(grid, 95, 10, 1, 4);
@@ -192,12 +199,12 @@ export function createLevel3Map() {
     addKnife(knives, 145, groundRow);
     carveGap(grid, 147, 4, groundRow);
 
-    platform(grid, 151, 10, 8);
-    addCoins(coins, 152, 158, 10);
-    addLadder(ladders, 155, 12, 10);
-
+    platform(grid, 148, 10, 8);
+    addCoins(coins, 150, 157, 10);
+    
     platform(grid, 162, 7, 10);
     addCoins(coins, 163, 171, 7);
+    addLadder(ladders, 162, 15, 7);
 
     enemies.push({
         x: 166 * TILE,
@@ -237,14 +244,14 @@ export function createLevel3Map() {
     });
 
     addKnife(knives, 220, groundRow);
+    addKnife(knives, 220.5, groundRow);
     addKnife(knives, 221, groundRow);
-    addKnife(knives, 222, groundRow);
 
     carveGap(grid, 226, 4, groundRow);
-    platform(grid, 226, 9, 3);
-    platform(grid, 231, 7, 3);
-    addCoins(coins, 226, 228, 9);
-    addCoins(coins, 231, 233, 7);
+    platform(grid, 226, 10, 3);
+    platform(grid, 231, 8, 3);
+    addCoins(coins, 226, 228, 10);
+    addCoins(coins, 231, 233, 8);
 
     blockStack(grid, 238, 12, 1, 2);
     platform(grid, 240, 8, 8);
@@ -265,6 +272,9 @@ export function createLevel3Map() {
     addKnife(knives, 268, groundRow);
     addKnife(knives, 269, groundRow);
     carveGap(grid, 272, 5, groundRow);
+
+      platform(grid, 273, 11, 10);
+    addCoins(coins, 273, 282, 11);
 
     blockStack(grid, 278, 12, 2, 1);
     blockStack(grid, 280, 11, 2, 2);

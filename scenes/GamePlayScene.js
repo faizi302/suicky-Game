@@ -85,6 +85,13 @@ export default class GamePlayScene {
                 !this.game.ui.showExit &&
                 !this.game.missionComplete
             ) {
+                // First close settings dropdown if it is open
+                if (this.game.ui.settingsOpen) {
+                    this.game.ui.settingsOpen = false;
+                    e.preventDefault();
+                    return;
+                }
+
                 this._saveProgress(true);
                 this.sceneManager.setScene('pause');
                 e.preventDefault();
