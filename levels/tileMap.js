@@ -256,7 +256,14 @@ export function createMap() {
     };
 }
 
-export function drawMap(ctx, map, tileSize, camera, levelData = null, doorOpened = false) {
+/**
+ * drawMap now accepts a doorAnimState object for animated door/lock:
+ *   { lockFrame, doorFrame, phase }
+ *   phase: 'locked' | 'lock_breaking' | 'door_opening' | 'open'
+ *
+ * For backward compatibility, doorOpened=true still works (shows final frame).
+ */
+export function drawMap(ctx, map, tileSize, camera, levelData = null, doorOpened = false, doorAnimState = null) {
     const frames = getBlockFrames();
     const img = document.getElementById('bocks') || document.getElementById('img_blocks');
 
@@ -301,83 +308,53 @@ export function drawMap(ctx, map, tileSize, camera, levelData = null, doorOpened
         }
     }
 
- if (levelData?.ladders?.length) {
-    const ladderImg = document.getElementById('img_ladder');
+    if (levelData?.ladders?.length) {
+        const ladderImg = document.getElementById('img_ladder');
 
-    for (const ladder of levelData.ladders) {
-        const drawX = Math.round(ladder.x - camera.x);
-        const drawY = Math.round(ladder.y - camera.y);
+        for (const ladder of levelData.ladders) {
+            const drawX = Math.round(ladder.x - camera.x);
+            const drawY = Math.round(ladder.y - camera.y);
 
-        if (ladderImg && ladderImg.complete && ladderImg.naturalWidth > 0) {
-            const srcW = ladderImg.naturalWidth;
-            const srcH = ladderImg.naturalHeight;
+            if (ladderImg && ladderImg.complete && ladderImg.naturalWidth > 0) {
+                const srcW = ladderImg.naturalWidth;
+                const srcH = ladderImg.naturalHeight;
 
-            // source split
-            const topH = Math.round(srcH * 0.22);
-            const midH = Math.round(srcH * 0.18);
-            const botH = Math.round(srcH * 0.22);
+                const topH = Math.round(srcH * 0.22);
+                const midH = Math.round(srcH * 0.18);
+                const botH = Math.round(srcH * 0.22);
 
-            // final ladder look controls
-            const destW = 28;          // ladder thinness
-            const topDrawH = 18;       // top cap height
-            const botDrawH = 18;       // bottom cap height
-            const rungDrawH = 11;      // one repeated rung block height
-            const rungGap = 1;         // gap between rungs visually
-            const sideOffsetX = 2;     // move left/right a little if needed
+                const destW = 28;
+                const topDrawH = 18;
+                const botDrawH = 18;
+                const rungDrawH = 11;
+                const rungGap = 1;
+                const sideOffsetX = 2;
 
-            const finalX = drawX + ((ladder.width - destW) * 0.5) + sideOffsetX;
+                const finalX = drawX + ((ladder.width - destW) * 0.5) + sideOffsetX;
 
-            // draw top cap
-            ctx.drawImage(
-                ladderImg,
-                0, 0, srcW, topH,
-                finalX,
-                drawY,
-                destW,
-                topDrawH
-            );
+                ctx.drawImage(ladderImg, 0, 0, srcW, topH, finalX, drawY, destW, topDrawH);
 
-            // middle repeated section
-            const middleStartY = drawY + topDrawH - 2;
-            const middleHeight = Math.max(0, ladder.height - topDrawH - botDrawH + 4);
+                const middleStartY = drawY + topDrawH - 2;
+                const middleHeight = Math.max(0, ladder.height - topDrawH - botDrawH + 4);
 
-            let y = middleStartY;
-            let safe = 0;
+                let y = middleStartY;
+                let safe = 0;
 
-            while (y < middleStartY + middleHeight && safe < 200) {
-                safe++;
+                while (y < middleStartY + middleHeight && safe < 200) {
+                    safe++;
+                    const remain = middleStartY + middleHeight - y;
+                    const h = Math.min(rungDrawH, remain);
+                    ctx.drawImage(ladderImg, 0, topH, srcW, midH, finalX, y, destW, h);
+                    y += Math.max(1, rungDrawH - rungGap);
+                }
 
-                const remain = middleStartY + middleHeight - y;
-                const h = Math.min(rungDrawH, remain);
-
-                ctx.drawImage(
-                    ladderImg,
-                    0, topH, srcW, midH,
-                    finalX,
-                    y,
-                    destW,
-                    h
-                );
-
-                y += Math.max(1, rungDrawH - rungGap);
+                ctx.drawImage(ladderImg, 0, srcH - botH, srcW, botH, finalX, drawY + ladder.height - botDrawH, destW, botDrawH);
+            } else {
+                ctx.fillStyle = '#9a9a9a';
+                ctx.fillRect(drawX, drawY, ladder.width, ladder.height);
             }
-
-            // draw bottom cap
-            ctx.drawImage(
-                ladderImg,
-                0, srcH - botH, srcW, botH,
-                finalX,
-                drawY + ladder.height - botDrawH,
-                destW,
-                botDrawH
-            );
-        } else {
-            ctx.fillStyle = '#9a9a9a';
-            ctx.fillRect(drawX, drawY, ladder.width, ladder.height);
         }
     }
-}
-
 
     if (levelData?.door) {
         const door = levelData.door;
@@ -387,15 +364,47 @@ export function drawMap(ctx, map, tileSize, camera, levelData = null, doorOpened
         const drawX = Math.floor(door.x - camera.x);
         const drawY = Math.floor(door.y - camera.y);
 
+        // Determine which frames to show based on animation state
+        const DOOR_FRAME_COUNT = 12;
+        const LOCK_FRAME_COUNT = 7;
+
+        let currentDoorFrame = 0;
+        let showLock = true;
+        let currentLockFrame = 0;
+
+        if (doorAnimState) {
+            // Use detailed animation state from game
+            const phase = doorAnimState.phase;
+            if (phase === 'locked') {
+                currentDoorFrame = 0;
+                showLock = true;
+                currentLockFrame = 0;
+            } else if (phase === 'lock_breaking') {
+                currentDoorFrame = 0;
+                showLock = true;
+                currentLockFrame = Math.min(LOCK_FRAME_COUNT - 1, doorAnimState.lockFrame || 0);
+            } else if (phase === 'door_opening') {
+                currentDoorFrame = Math.min(DOOR_FRAME_COUNT - 1, doorAnimState.doorFrame || 0);
+                showLock = false;
+            } else if (phase === 'open') {
+                currentDoorFrame = DOOR_FRAME_COUNT - 1;
+                showLock = false;
+            }
+        } else {
+            // Legacy: simple boolean
+            currentDoorFrame = doorOpened ? DOOR_FRAME_COUNT - 1 : 0;
+            showLock = !doorOpened;
+            currentLockFrame = 0;
+        }
+
+        // Draw door
         if (doorImg && doorImg.complete && doorImg.naturalWidth > 0) {
-            const frameCount = 12;
-            const frameW = Math.floor(doorImg.naturalWidth / frameCount);
+            const frameW = Math.floor(doorImg.naturalWidth / DOOR_FRAME_COUNT);
             const frameH = doorImg.naturalHeight;
-            const currentFrame = doorOpened ? frameCount - 1 : 0;
 
             ctx.drawImage(
                 doorImg,
-                currentFrame * frameW, 0, frameW, frameH,
+                currentDoorFrame * frameW, 0, frameW, frameH,
                 drawX, drawY, 52, 78
             );
         } else {
@@ -403,14 +412,14 @@ export function drawMap(ctx, map, tileSize, camera, levelData = null, doorOpened
             ctx.fillRect(drawX, drawY, door.width, door.height);
         }
 
-        if (!doorOpened && lockImg && lockImg.complete && lockImg.naturalWidth > 0) {
-            const frameCount = 7;
-            const frameW = Math.floor(lockImg.naturalWidth / frameCount);
-            const frameH = lockImg.naturalHeight;
+        // Draw lock overlay
+        if (showLock && lockImg && lockImg.complete && lockImg.naturalWidth > 0) {
+            const lockFrameW = Math.floor(lockImg.naturalWidth / LOCK_FRAME_COUNT);
+            const lockFrameH = lockImg.naturalHeight;
 
             ctx.drawImage(
                 lockImg,
-                0, 0, frameW, frameH,
+                currentLockFrame * lockFrameW, 0, lockFrameW, lockFrameH,
                 drawX + 12, drawY + 26,
                 24, 24
             );

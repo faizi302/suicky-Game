@@ -1,3 +1,5 @@
+import { MAX_HEALTH } from '../characters/player.js';
+
 export default class UI {
     constructor(canvas, sceneManager) {
         this.canvas = canvas;
@@ -41,6 +43,11 @@ export default class UI {
 
         this.overlayAnim = 0;
         this._lastTouchAt = 0;
+
+        // Health bar
+        this.playerHealth = MAX_HEALTH;
+        this._warningPulse = 0; // 0..1 oscillating for warning animation
+        this._warningDir = 1;
 
         this._loadImages();
         this._bindEvents();
@@ -124,6 +131,22 @@ export default class UI {
 
         this.isFullscreen = !!document.fullscreenElement;
 
+        // Animate warning pulse when health is low (<=25)
+        if (this.playerHealth <= 25 && this.playerHealth > 0) {
+            const pulseSpeed = dt / 280; // controls pulse speed
+            this._warningPulse += pulseSpeed * this._warningDir;
+            if (this._warningPulse >= 1) {
+                this._warningPulse = 1;
+                this._warningDir = -1;
+            } else if (this._warningPulse <= 0) {
+                this._warningPulse = 0;
+                this._warningDir = 1;
+            }
+        } else {
+            this._warningPulse = 0;
+            this._warningDir = 1;
+        }
+
         if (this.gameOver) return;
 
         this.timer -= dt;
@@ -169,6 +192,10 @@ export default class UI {
         const gearY = safeTop;
         const timerX = gearX - gap - timerW;
         const timerY = safeTop;
+
+        // Health bar — positioned below the top HUD cards
+        const healthBarY = safeTop + cardH + gap;
+        this._drawHealthBar(ctx, leftX, healthBarY, leftW + gap + scoreW, isSmall ? 12 : isMedium ? 14 : 16, W);
 
         this._drawCard(ctx, leftX, leftY, leftW, cardH);
 
@@ -218,6 +245,108 @@ export default class UI {
 
         ctx.textAlign = 'left';
         ctx.textBaseline = 'alphabetic';
+    }
+
+    _drawHealthBar(ctx, x, y, totalWidth, barH, W) {
+        const health = Math.max(0, Math.min(MAX_HEALTH, this.playerHealth || MAX_HEALTH));
+        const ratio = health / MAX_HEALTH;
+        const isLow = health <= 25;
+        const isMediumHp = health <= 50 && health > 25;
+
+        const radius = Math.round(barH / 2);
+        const labelW = Math.round(totalWidth * 0.18); // "HP" label area
+        const barX = x + labelW;
+        const barW = totalWidth - labelW;
+        const fillW = Math.round(barW * ratio);
+
+        ctx.save();
+
+        // Background track
+        ctx.fillStyle = 'rgba(20, 8, 0, 0.75)';
+        ctx.strokeStyle = 'rgba(200, 135, 42, 0.6)';
+        ctx.lineWidth = 1.5;
+        this._rr(ctx, barX, y, barW, barH, radius);
+        ctx.fill();
+        ctx.stroke();
+
+        // Fill color based on health level
+        let barColor;
+        if (isLow) {
+            // Warning: pulse between bright red and dark red
+            const r1 = [220, 30, 30];
+            const r2 = [255, 80, 80];
+            const t = this._warningPulse;
+            const r = Math.round(r1[0] + (r2[0] - r1[0]) * t);
+            const g = Math.round(r1[1] + (r2[1] - r1[1]) * t);
+            const b = Math.round(r1[2] + (r2[2] - r1[2]) * t);
+            barColor = `rgb(${r},${g},${b})`;
+        } else if (isMediumHp) {
+            barColor = '#e8a020'; // orange
+        } else {
+            barColor = '#2ecc40'; // green
+        }
+
+        // Draw fill bar (clipped to rounded rect)
+        if (fillW > 0) {
+            ctx.save();
+            this._rr(ctx, barX, y, barW, barH, radius);
+            ctx.clip();
+            ctx.fillStyle = barColor;
+            ctx.fillRect(barX, y, fillW, barH);
+
+            // Glossy highlight on fill
+            const grad = ctx.createLinearGradient(barX, y, barX, y + barH);
+            grad.addColorStop(0, 'rgba(255,255,255,0.28)');
+            grad.addColorStop(0.5, 'rgba(255,255,255,0.06)');
+            grad.addColorStop(1, 'rgba(0,0,0,0.10)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(barX, y, fillW, barH);
+
+            ctx.restore();
+        }
+
+        // Warning glow outline when low health
+        if (isLow) {
+            const glowAlpha = 0.3 + this._warningPulse * 0.55;
+            ctx.save();
+            ctx.shadowColor = '#ff2020';
+            ctx.shadowBlur = 10 + this._warningPulse * 10;
+            ctx.strokeStyle = `rgba(255, 50, 50, ${glowAlpha})`;
+            ctx.lineWidth = 2.5;
+            this._rr(ctx, barX, y, barW, barH, radius);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // "HP" label
+        ctx.fillStyle = isLow ? `rgba(255, ${Math.round(60 + this._warningPulse * 80)}, 60, 1)` : '#ffffff';
+        ctx.font = `bold ${Math.round(barH * 1.1)}px Arial`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('HP', barX - 5, y + barH / 2);
+
+        // Health number inside bar
+        if (barH >= 12) {
+            ctx.fillStyle = 'rgba(255,255,255,0.90)';
+            ctx.font = `bold ${Math.round(barH * 0.85)}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${health}`, barX + barW / 2, y + barH / 2);
+        }
+
+        // "!" warning icon when low
+        if (isLow) {
+            const warnAlpha = 0.6 + this._warningPulse * 0.4;
+            const warnX = barX + barW + 5;
+            const warnY = y + barH / 2;
+            ctx.fillStyle = `rgba(255, 80, 80, ${warnAlpha})`;
+            ctx.font = `bold ${Math.round(barH * 1.3)}px Arial`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('!', warnX, warnY);
+        }
+
+        ctx.restore();
     }
 
     _drawDropdown(ctx, W, H) {

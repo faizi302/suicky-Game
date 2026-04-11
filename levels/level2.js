@@ -174,17 +174,16 @@ export function createLevel2Map() {
     });
 
     addKnife(knives, 132, groundRow);
-    addKnife(knives, 133, groundRow);
     addKnife(knives, 134, groundRow);
 
     carveGap(grid, 136, 3, groundRow);
     blockStack(grid, 139, 12, 1, 2);
-    platform(grid, 141, 10, 8);
-    addCoins(coins, 142, 148, 10);
-    addLadder(ladders, 145, 12, 10);
+    platform(grid, 137, 10, 8);
+    addCoins(coins, 138, 143, 10);
 
     platform(grid, 152, 6, 13);
     addCoins(coins, 153, 164, 6);
+    addLadder(ladders,153,12,6);
 
     enemies.push({
         x: 157 * TILE,
@@ -195,11 +194,11 @@ export function createLevel2Map() {
     });
 
     carveGap(grid, 169, 4, groundRow);
-    platform(grid, 169, 10, 4);
-    platform(grid, 174, 8, 4);
-    addCoins(coins, 169, 172, 10);
-    addCoins(coins, 174, 177, 8);
-    addLadder(ladders, 176, 12, 8);
+    // platform(grid, 169, 10, 4);
+    platform(grid, 170, 10, 4);
+    // addCoins(coins, 169, 172, 10);
+    addCoins(coins, 170, 74, 10);
+    // addLadder(ladders, 176, 12, 8);
 
     blockStack(grid, 181, 12, 1, 2);
     blockStack(grid, 182, 11, 1, 3);
@@ -220,13 +219,14 @@ export function createLevel2Map() {
     addKnife(knives, 200, groundRow);
     carveGap(grid, 202, 4, groundRow);
 
-    platform(grid, 206, 11, 9);
-    addCoins(coins, 207, 214, 11);
-    addLadder(ladders, 210, 12, 11);
+    platform(grid, 203, 11, 9);
+    addCoins(coins, 204, 210, 11);
+    // addLadder(ladders, 210, 12 11);
 
     platform(grid, 219, 7, 12);
     addCoins(coins, 220, 230, 7);
     addKey(keys, 228, 7);
+    addLadder(ladders,220,12,7);
 
     enemies.push({
         x: 225 * TILE,
@@ -244,6 +244,8 @@ export function createLevel2Map() {
 
     platform(grid, 250, 6, 12);
     addCoins(coins, 251, 260, 6);
+       addLadder(ladders,251,12,6);
+
 
     addKnife(knives, 264, groundRow);
     addKnife(knives, 265, groundRow);
