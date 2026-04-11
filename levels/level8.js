@@ -1,75 +1,19 @@
-const TILE = 40;
-
-function makeGrid(rows, cols) {
-    return Array.from({ length: rows }, () => new Uint8Array(cols));
-}
-
-function setTile(grid, x, y, value) {
-    if (y < 0 || y >= grid.length || x < 0 || x >= grid[0].length) return;
-    grid[y][x] = value;
-}
-
-function fillRect(grid, x, y, w, h, value) {
-    for (let row = y; row < y + h; row++) {
-        for (let col = x; col < x + w; col++) {
-            setTile(grid, col, row, value);
-        }
-    }
-}
-
-function platform(grid, x, y, length, type = 1) {
-    for (let i = 0; i < length; i++) setTile(grid, x + i, y, type);
-}
-
-function blockStack(grid, x, y, w, h, value = 2) {
-    fillRect(grid, x, y, w, h, value);
-}
-
-function addCoin(coins, col, row, offsetY = 16) {
-    coins.push({
-        x: col * TILE + TILE * 0.5 - 16,
-        y: row * TILE - offsetY
-    });
-}
-
-function addCoins(coins, startCol, endCol, row, offsetY = 16, skipCols = []) {
-    for (let col = startCol; col <= endCol; col++) {
-        if (!skipCols.includes(col)) addCoin(coins, col, row, offsetY);
-    }
-}
-
-function addKey(keys, col, row, offsetY = 22) {
-    keys.push({
-        x: col * TILE + TILE * 0.5 - 16,
-        y: row * TILE - offsetY
-    });
-}
-
-function addKnife(knives, col, row) {
-    knives.push({
-        x: col * TILE - 10,
-        y: row * TILE - 22
-    });
-}
-
-function addLadder(ladders, col, bottomRow, topRow) {
-    const width = 34;
-    const x = col * TILE + (TILE - width) / 2;
-    ladders.push({
-        x,
-        y: topRow * TILE - 2,
-        width,
-        height: (bottomRow - topRow + 1) * TILE + 4
-    });
-}
-
-function carveGap(grid, startCol, width, groundRow) {
-    for (let x = startCol; x < startCol + width; x++) {
-        for (let y = groundRow; y < grid.length; y++) {
-            setTile(grid, x, y, 0);
-        }
-    }
-}
+import {
+    TILE,
+    makeGrid,
+    setTile,
+    fillRect,
+    platform,
+    blockStack,
+    addCoin,
+    addCoins,
+    addKey,
+    addKnife,
+    addLadder,
+    carveGap,
+    fillGroundAndWalls,
+    createLevelCollections
+} from './levelUtils.js';
 
 export function createLevel8Map() {
     const rows = 17;
@@ -77,22 +21,9 @@ export function createLevel8Map() {
     const groundRow = 13;
 
     const grid = makeGrid(rows, cols);
-    const coins = [];
-    const keys = [];
-    const knives = [];
-    const enemies = [];
-    const ladders = [];
+const { coins, keys, knives, enemies, ladders } = createLevelCollections();
 
-    for (let x = 0; x < cols; x++) {
-        setTile(grid, x, groundRow, 2);
-        setTile(grid, x, groundRow + 1, 2);
-        setTile(grid, x, groundRow + 2, 2);
-
-        if (x === 0 || x === cols - 1) {
-            for (let y = 0; y <= groundRow; y++) setTile(grid, x, y, 2);
-        }
-    }
-
+fillGroundAndWalls(grid, cols, groundRow);
     blockStack(grid, 3, 12, 1, 2);
     platform(grid, 6, 10, 6);
     addLadder(ladders, 8, 12, 10);
